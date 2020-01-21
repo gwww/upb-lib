@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+
+import argparse
+import asyncio
+import io
+import os
+import logging
+import sys
+import textwrap
+import traceback
+
+from upb_lib import UpbPim
+from upb_lib.message import MessageEncode
+from upb_lib.const import Max
+import cmdr
+
+
+LOG = logging.getLogger(__name__)
+
+class StdOutWrapper:
+    def __init__(self, cmdr):
+        sys.stdout = self
+        sys.stderr = self
+        self.cmdr = cmdr
+        self.log = None
+
+    def write(self,txt):
+        txt = txt.rstrip()
+        if len(txt) > 0:
+            self.cmdr.output(txt)
+            if self.log:
+                print(txt, file=self.log)
+
+    def flush(self):
+        pass
+
+def _unknown_handler(msg_code, data):
+    LOG.debug("No decoder for message type: %s Contents: %s", msg_code, data)
+
+def _timeout_handler(msg_code):
+    LOG.debug("Timeout waiting for '%s'", msg_code)
+
+class SmartFormatter(argparse.HelpFormatter):
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return text[2:].splitlines()
+        return argparse.HelpFormatter._split_lines(self, text, width)
+
+def parse_args():
+    parser = argparse.ArgumentParser("pim", formatter_class=SmartFormatter)
+
+    parser.add_argument('-i', '--interactive', action='store_true', default=False,
+                        dest='interactive',
+                        help='Run in interactive mode (type help for more info)')
+    parser.add_argument('-u', '--url', action='store', dest='url',
+            help=("R|URL to connect to in one of the following formats:\n"
+                 "  tcp://host[:port] -- connect to PIM over Ethernet\n"
+                 "  serial://port[:baud] -- connect to PIM over serial port\n"))
+
+    results = parser.parse_args()
+    return results
+
+def main():
+    config = {}
+
+    args = parse_args()
+    url = args.url if args.url else os.environ.get('UPBPIM_URL')
+    if url:
+        config['url'] = url
+    config['UPStartFileExport'] = 'bin/upb.upe'
+
+    pim = UpbPim(config)
+
+    if args.interactive:
+        c=cmdr.Commander('PIM console', cmd_cb=cmdr.Commands(pim))
+        mystdout = StdOutWrapper(c)
+        logging.basicConfig(stream=mystdout,
+                            level=logging.DEBUG, format='%(message)s')
+    else:
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+
+    try:
+        # pim.add_handler('unknown', _unknown_handler)
+        # pim.add_handler('timeout', _timeout_handler)
+        pim.connect()
+        if args.interactive:
+            c.loop()
+        else:
+            pim.run()
+    except KeyboardInterrupt:
+        exit(0)
+
+if __name__ == '__main__':
+    main()

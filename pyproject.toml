@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "upb-lib"
+version = "0.0.1"
+description = "Library for interacting with UPB PIM."
+homepage = "https://github.com/gwww/upb"
+authors = ["Glenn Waters <gwwaters+upb@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+classifiers = [
+  'Development Status :: 4 - Beta',
+  'Intended Audience :: Developers',
+]
+include = ["CHANGELOG.md", "bin/**/*"]
+exclude = ["test"]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+pytz = ">=2019"
+pyserial-asyncio = "^0.4.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^4.3"
+mock = "^2.0"
+pytest-mock = "^1.10"
+urwid = "^2.0"
+attrs = "^19.1"
+colorlog = "^4.0"
+black = "19.3b0"
+
+[build-system]
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"
