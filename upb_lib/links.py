@@ -28,21 +28,28 @@ class Links(Elements):
     def __init__(self, pim):
         super().__init__(pim)
         pim.add_handler(UpbCommand.ACTIVATE, self._activate_handler)
-        pim.add_handler(UpbCommand.DEACTIVATE, self._activate_handler)
+        pim.add_handler(UpbCommand.DEACTIVATE, self._deactivate_handler)
 
-    def _activate_handler(self, link_id):
+    def _activate_deactivate(self, link_id, link_levels):
+        act = "Activate" if link_levels else "Deactivate"
         if link_id not in self.elements:
-            LOG.warning("UPB Activate command received for unknown link: {}".
-                        format(link_id))
+            LOG.warning("UPB {} command received for unknown link: {}".format(
+                act, link_id))
             return
 
-        LOG.debug("Activate '{}' ({})".format(self.elements[link_id].name, link_id))
+        LOG.debug("{} '{}' ({})".format(act, self.elements[link_id].name, link_id))
         lights = self.elements[link_id].lights
         for light_link in lights:
             if light_link.light_id not in self.pim.lights.elements:
                 continue
 
             light = self.pim.lights.elements[light_link.light_id]
-            light.setattr("status", light_link.dim_level)
-            LOG.debug("  Updating '{}' to dim level {}".
-                      format(light.name, light_link.dim_level))
+            light.setattr("status", light_link.dim_level if link_levels else 0)
+            LOG.debug("  Updating '{}' to dim level {}".format(
+                light.name, light_link.dim_level if link_levels else 0))
+
+    def _activate_handler(self, link_id):
+        self._activate_deactivate(link_id, True)
+
+    def _deactivate_handler(self, link_id):
+        self._activate_deactivate(link_id, False)

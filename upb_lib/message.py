@@ -10,6 +10,7 @@ import logging
 import re
 
 from .const import UpbCommand, Max
+from .util import light_id
 
 LOG = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class MessageDecode:
     def __init__(self):
         """Initialize a new Message instance."""
         self._handlers = {}
+        self._last_message = bytearray()
 
     def add_handler(self, message_type, handler):
         """Manage callbacks for message handlers."""
@@ -47,63 +49,69 @@ class MessageDecode:
         ... - contents of UPB message, vary by type
         KK - checksum
 
-        Minimum length is 16 bytes (all the bytes except the '...')
+        Minimum length is 14 bytes (all the bytes except the '...' bit)
         """
+        if len(msg) < 14:
+            raise ValueError("UPB message less than 14 characters")
+
+        # Convert message to binary, stripping checksum as PIM checks it
+        msg = bytearray.fromhex(msg[:-2])
+        if self._repeated_message(msg):
+            LOG.debug("Repeated message!!!")
+            return
+
+        control = int.from_bytes(msg[0:2], byteorder='big')
+        self.link = (control & 0x8000) != 0
+        self.repeater_request = (control >> 13) & 3
+        self.length = (control >> 8) & 31
+        self.ack_request = (control >> 4) & 7
+        self.transmit_count = (control >> 2) & 3
+        self.transmit_sequence = control & 3
+
+        self.network_id = msg[2]
+        self.dest_id = msg[3]
+        self.src_id = msg[4]
+        self.msg_id = msg[5]
+        self.data = msg[6:]
+
+        LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
+                  self.link, self.repeater_request,
+                  self.length, self.ack_request,
+                  self.transmit_count, self.transmit_sequence )
+        LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
+                  self.dest_id, self.src_id, self.msg_id)
+
         try:
-            if len(msg) < 14:
-                raise ValueError("UPB message less than 14 characters")
-
-            control = int(msg[0:4], 16)
-            self.link = (control & 0x8000) != 0
-            self.repeater_request = (control >> 13) & 3
-            self.length = (control >> 8) & 31
-            self.ack_request = (control >> 4) & 7
-            self.transmit_count = (control >> 2) & 3
-            self.transmit_sequence = control & 3
-
-            self.network_id = int(msg[4:6], 16)
-            self.dest_id = int(msg[6:8], 16)
-            self.src_id = int(msg[8:10], 16)
-            self.msg_id = int(msg[10:12], 16)
-
-            self.msg_data = msg[12:-2]
-
-            LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
-                      self.link, self.repeater_request,
-                      self.length, self.ack_request,
-                      self.transmit_count, self.transmit_sequence )
-            LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
-                      self.dest_id, self.src_id, self.msg_id)
-
-        except IndexError:
-            raise ValueError("UPB message length incorrect")
-
-        try:
-            decoder_name = UpbCommand(self.msg_id).name.lower()
-            decoder = getattr(self, "_decode_{}".format(decoder_name))
-            breakpoint()
+            decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
+            decoder = getattr(self, decoder_name)
             decoded_msg = decoder()
             for handler in self._handlers.get(self.msg_id, []):
                 handler(**decoded_msg)
-
         except:
-            LOG.warn("Unknown/upsupported UPB message type {}".format(self.msg_id))
+            LOG.warn("Unknown/upsupported UPB message type 0x{:02x}".
+                     format(self.msg_id))
 
-        # _check_message_valid(msg)
-        # cmd = msg[2:4]
-        # decoder = getattr(self, "_{}_decode".format(cmd.lower()), None)
-        # if not decoder:
-        #     cmd = "unknown"
-        #     decoder = self._unknown_decode
-        # decoded_msg = decoder(msg)
-        # for handler in self._handlers.get(cmd, []):
-        #     handler(**decoded_msg)
+    def _repeated_message(self, msg):
+        current_message = msg.copy()
+        current_message[1] = current_message[1] & 0xfc # Clear sequence field
+        if current_message == self._last_message:
+            return True
+        self._last_message = current_message
+        return False
+
+    def _light_id(self):
+        return light_id(self.network_id, self.src_id, 0)
 
     def _decode_activate(self):
         return {'link_id': self.dest_id}
 
     def _decode_deactivate(self):
         return {'link_id': self.dest_id}
+
+    def _decode_device_state_report(self):
+        return {'light_id': self._light_id(), 'dim_level': self.data[0]}
+
+
 
     def _am_decode(self, msg):
         """AM: Alarm memory by area report."""

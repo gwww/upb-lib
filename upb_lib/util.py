@@ -12,3 +12,8 @@ def parse_url(url):
     else:
         raise ValueError("Invalid scheme '%s'" % scheme)
     return (scheme, host, int(port))
+
+
+def light_id(network, light_id, channel):
+    """Format a light ID"""
+    return "{}/{}".format(network, light_id)
