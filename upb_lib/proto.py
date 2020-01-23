@@ -1,13 +1,24 @@
 """Async IO."""
 
 import asyncio
+from collections import namedtuple
 from functools import reduce
 import logging
 
+from .const import PimCommand
 from .message import get_pim_command
 
 LOG = logging.getLogger(__name__)
 
+
+class _Packet():
+    """Details about a packet being sent"""
+
+    def __init__(self, data, pim_cmd, timeout):
+        self.data = data
+        self.pim_cmd = pim_cmd
+        self.timeout = timeout
+        self.retry_count = 1
 
 class Connection(asyncio.Protocol):
     """asyncio Protocol with line parsing and queuing writes"""
@@ -39,11 +50,6 @@ class Connection(asyncio.Protocol):
         self._cleanup()
         self._disconnected_callback()
 
-    def _cleanup(self):
-        self._cancel_timer()
-        self._queued_writes = []
-        self._buffer = ""
-
     def pause(self):
         """Pause the connection from sending/receiving."""
         self._cleanup()
@@ -53,63 +59,77 @@ class Connection(asyncio.Protocol):
         """Restart the connection from sending/receiving."""
         self._paused = False
 
-    def _response_required_timeout(self):
-        self._timeout(True)
-        self._timeout_task = None
-        self._process_write_queue()
-
-    def _cancel_timer(self):
-        if self._timeout_task:
-            self._timeout_task.cancel()
-            self._timeout_task = None
-
     def data_received(self, data):
         self._buffer += data.decode("ISO-8859-1")
         while "\r" in self._buffer:
             line, self._buffer = self._buffer.split("\r", 1)
             LOG.debug("message received: %10s '%s'", self._msgmap[line[1]], line)
             pim_command = get_pim_command(line)
-            if pim_command == 'PA':
+            if pim_command == 'PA':  # Accept
                 self._cancel_timer()
                 if self._queued_writes:
                     self._queued_writes.pop(0)
-            elif pim_command == 'PB':
+                self._process_write_queue()
+            elif pim_command == 'PB':  # Busy
                 self._cancel_timer()
-            elif pim_command == 'PE':
+            elif pim_command == 'PE':  # Error
                 self._cancel_timer()
                 if self._queued_writes:
                     self._queued_writes.pop(0)
-            elif pim_command == 'PR':
+            elif pim_command == 'PR':  # Report
                 pass
-            elif pim_command == 'PK':
+            elif pim_command == 'PK':  # Ack
                 pass
-            elif pim_command == 'PN':
+            elif pim_command == 'PN':  # Nack
                 pass
-            elif pim_command == 'PU':
+            elif pim_command == 'PU':  # Update
                 self._got_data_callback(line[2:])
+                self._process_write_queue()
 
-        self._process_write_queue()
-
-    def write_data(self, data, timeout=5.0):
+    def write_data(self, data, pim_cmd=PimCommand.TX_UPB_MSG.value, timeout=5.0):
         """Write data on the asyncio Protocol"""
         if self._paused or self._transport is None:
             return
 
-        self._queued_writes.append((data, timeout))
+        self._queued_writes.append(_Packet(data, pim_cmd, timeout))
         if len(self._queued_writes) > 1:
             LOG.debug("deferring write %s", data)
             return
 
-        self._send(data, timeout)
+        self._send(data, timeout, pim_cmd)
 
-    def _process_write_queue(self):
+    def _successful_write(self):
+        self._cancel_timer()
         if self._queued_writes:
-            self._send(self._queued_writes[0][0], self._queued_writes[0][1])
+            self._queued_writes.pop(0)
+        self._process_write_queue()
 
-    def _send(self, data, timeout):
+    def _response_required_timeout(self):
+        self._timeout(True)
+        self._timeout_task = None
+        self._process_write_queue()
+
+    def _cleanup(self):
+        self._cancel_timer()
+        self._queued_writes = []
+        self._buffer = ""
+
+    def _start_timer(self, timeout):
         if timeout > 0:
             self._timeout_task = self.loop.call_later(
                 timeout, self._response_required_timeout)
 
-        LOG.debug("_send '%s'", data)
-        self._transport.write(("\x14{}\r".format(data)).encode())
+    def _cancel_timer(self):
+        if self._timeout_task:
+            self._timeout_task.cancel()
+            self._timeout_task = None
+
+    def _process_write_queue(self):
+        if self._queued_writes:
+            pkt = self._queued_writes[0]
+            self._send(pkt.data, pkt.timeout, pkt.pim_cmd)
+
+    def _send(self, data, timeout, pim_command):
+        self._start_timer(timeout)
+        LOG.debug("_send '{}' pim_cmd 0x{}".format(data, ord(pim_command)))
+        self._transport.write(("{:s}{}\r".format(pim_command, data)).encode())

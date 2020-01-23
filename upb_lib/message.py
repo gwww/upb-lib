@@ -74,22 +74,24 @@ class MessageDecode:
         self.msg_id = msg[5]
         self.data = msg[6:]
 
-        LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
-                  self.link, self.repeater_request,
-                  self.length, self.ack_request,
-                  self.transmit_count, self.transmit_sequence )
-        LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
-                  self.dest_id, self.src_id, self.msg_id)
+        # LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
+        #           self.link, self.repeater_request,
+        #           self.length, self.ack_request,
+        #           self.transmit_count, self.transmit_sequence )
+        # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
+        #           self.dest_id, self.src_id, self.msg_id)
 
         try:
             decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
             decoder = getattr(self, decoder_name)
-            decoded_msg = decoder()
-            for handler in self._handlers.get(self.msg_id, []):
-                handler(**decoded_msg)
         except:
             LOG.warn("Unknown/upsupported UPB message type 0x{:02x}".
                      format(self.msg_id))
+            return
+
+        decoded_msg = decoder()
+        for handler in self._handlers.get(self.msg_id, []):
+            handler(**decoded_msg)
 
     def _repeated_message(self, msg):
         current_message = msg.copy()
@@ -110,6 +112,9 @@ class MessageDecode:
 
     def _decode_device_state_report(self):
         return {'light_id': self._light_id(), 'dim_level': self.data[0]}
+
+    def _decode_register_values_report(self):
+        return {'data': self.data}
 
 
 
@@ -334,214 +339,3 @@ def encode_message(control, network_id, dest_id, src_id, msg_code, data=''):
     msg[-1] = 256 - reduce(lambda x, y: x + y, msg) % 256
 
     return msg.hex().upper()
-
-
-def _status_decode(status):
-    """Decode a 1 byte status into logical and physical statuses."""
-    logical_status = (status & 0b00001100) >> 2
-    physical_status = status & 0b00000011
-    return (logical_status, physical_status)
-
-
-# def _check_checksum(msg):
-#     """Ensure checksum in message is good."""
-#     checksum = int(msg[-2:], 16)
-#     for char in msg[:-2]:
-#         checksum += ord(char)
-#     if (checksum % 256) != 0:
-#         raise ValueError("UPB message checksum invalid")
-
-# # PU8904C2090920FFFF81
-
-# def _check_message_valid(msg):
-#     """Check packet length valid and that checksum is good."""
-#     try:
-#         if len(msg) < 6:
-#             raise ValueError("UPB message less than 6 characters")
-
-#         control = int(msg[2:6], 16)
-#         link = (control & 0x8000) != 0
-#         repeater_request = (control >> 13) & 3
-#         length = (control >> 8) & 31
-#         ack_request = (control >> 4) & 7
-#         transmit_count = (control >> 2) & 3
-#         transmit_sequence = control & 3
-
-#         # if int(msg[:2], 16) != (len(msg) - 2):
-#         #     raise ValueError("UPB message length incorrect")
-#         # _check_checksum(msg)
-#     except IndexError:
-#         raise ValueError("UPB message length incorrect")
-
-
-def al_encode(arm_mode, area, user_code):
-    """al: Arm system. Note in 'al' the 'l' can vary"""
-    return MessageEncode(
-        "0Da{}{:1d}{:06d}00".format(arm_mode, area + 1, user_code), "AS"
-    )
-
-
-def as_encode():
-    """as: Get area status."""
-    return MessageEncode("06as00", "AS")
-
-
-def az_encode():
-    """az: Get alarm by zone."""
-    return MessageEncode("06az00", "AZ")
-
-
-def cf_encode(output):
-    """cf: Turn off output."""
-    return MessageEncode("09cf{:03d}00".format(output + 1), None)
-
-
-def ct_encode(output):
-    """ct: Toggle output."""
-    return MessageEncode("09ct{:03d}00".format(output + 1), None)
-
-
-def cn_encode(output, time):
-    """cn: Turn on output."""
-    return MessageEncode("0Ecn{:03d}{:05d}00".format(output + 1, time), None)
-
-
-def cs_encode():
-    """cs: Get all output status."""
-    return MessageEncode("06cs00", "CS")
-
-
-def cp_encode():
-    """cp: Get ALL custom values."""
-    return MessageEncode("06cp00", "CR")
-
-
-def cr_encode(index):
-    """cr: Get a custom value."""
-    return MessageEncode("08cr{cv:02d}00".format(cv=index + 1), "CR")
-
-
-def cw_encode(index, value, value_format):
-    """cw: Write a custom value."""
-    if value_format == 2:
-        value = value[0] << 8 + value[1]
-    return MessageEncode("0Dcw{:02d}{:05d}00".format(index + 1, value), None)
-
-
-def cv_encode(counter):
-    """cv: Get counter."""
-    return MessageEncode("08cv{c:02d}00".format(c=counter + 1), "CV")
-
-
-def cx_encode(counter, value):
-    """cx: Change counter value."""
-    return MessageEncode("0Dcx{:02d}{:05d}00".format(counter + 1, value), "CV")
-
-
-# pylint: disable=too-many-arguments
-def dm_encode(keypad_area, clear, beep, timeout, line1, line2):
-    """dm: Display message on keypad."""
-    return MessageEncode(
-        "2Edm{:1d}{:1d}{:1d}{:05d}{:^<16.16}{:^<16.16}00".format(
-            keypad_area + 1, clear, beep, timeout, line1, line2
-        ),
-        None,
-    )
-
-
-def ka_encode():
-    """ka: Get keypad areas."""
-    return MessageEncode("06ka00", "KA")
-
-
-def lw_encode():
-    """lw: Get temperature data."""
-    return MessageEncode("06lw00", "LW")
-
-
-def ps_encode(bank):
-    """ps: Get lighting status."""
-    return MessageEncode("07ps{:1d}00".format(bank), "PS")
-
-
-def sd_encode(desc_type, unit):
-    """sd: Get description."""
-    return MessageEncode("0Bsd{:02d}{:03d}00".format(desc_type, unit + 1), "SD")
-
-
-def sp_encode(phrase):
-    """sp: Speak phrase."""
-    return MessageEncode("09sp{:03d}00".format(phrase), None)
-
-
-def ss_encode():
-    """ss: Get system trouble status."""
-    return MessageEncode("06ss00", "SS")
-
-
-def sw_encode(word):
-    """sp: Speak word."""
-    return MessageEncode("09sw{:03d}00".format(word), None)
-
-
-def tn_encode(task):
-    """tn: Activate task."""
-    return MessageEncode("09tn{:03d}00".format(task + 1), None)
-
-
-def tr_encode(thermostat):
-    """tr: Request thermostat data."""
-    return MessageEncode("08tr{:02d}00".format(thermostat + 1), None)
-
-
-def ts_encode(thermostat, value, element):
-    """ts: Set thermostat data."""
-    return MessageEncode(
-        "0Bts{:02d}{:02d}{:1d}00".format(thermostat + 1, value, element), None
-    )
-
-
-def vn_encode():
-    """zd: Get panel software version information."""
-    return MessageEncode("06vn00", "VN")
-
-
-def zb_encode(zone, area, user_code):
-    """zb: Zone bypass. Zone < 0 unbypass all; Zone > Max bypass all."""
-    if zone < 0:
-        zone = 0
-    elif zone > Max.ZONES.value:
-        zone = 999
-    else:
-        zone += 1
-    return MessageEncode(
-        "10zb{zone:03d}{area:1d}{code:06d}00".format(
-            zone=zone, area=area + 1, code=user_code
-        ),
-        "ZB",
-    )
-
-
-def zd_encode():
-    """zd: Get zone definitions"""
-    return MessageEncode("06zd00", "ZD")
-
-
-def zp_encode():
-    """zp: Get zone partitions"""
-    return MessageEncode("06zp00", "ZP")
-
-
-def zs_encode():
-    """zs: Get zone statuses"""
-    return MessageEncode("06zs00", "ZS")
-
-
-def zt_encode(zone):
-    """zt: Trigger zone."""
-    return MessageEncode("09zt{zone:03d}00".format(zone=zone + 1), None)
-
-
-def zv_encode(zone):
-    """zv: Get zone voltage"""
-    return MessageEncode("09zv{zone:03d}00".format(zone=zone + 1), "ZV")

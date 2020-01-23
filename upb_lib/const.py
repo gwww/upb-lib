@@ -11,12 +11,15 @@ class UpbCommand(Enum):
     ACTIVATE = 0x20
     DEACTIVATE = 0x21
     DEVICE_STATE_REPORT = 0x86
+    REGISTER_VALUES_REPORT = 0x90
+
 
 class PimCommand(Enum):
     """Lead character when sending to PIM"""
-    TX_UBP_MSG = 0x14
-    READ_PIM_REGISTERS = 0x12
-    WRITE_PIM_REGISTERS = 0x17
+
+    TX_UPB_MSG = '\x14'
+    READ_PIM_REGISTERS = '\x12'
+    WRITE_PIM_REGISTERS = '\x17'
 
 
 # UPB Product list from export document

@@ -86,8 +86,10 @@ class UpbPim:
         # self.call_sync_handlers()
         control = encode_control_word(link=False, repeater=0, ack=1,
                                       tx_cnt=0, tx_seq=0)
-        msg = encode_message(control, 194, 0, 255, 0x87)
-        # self.send(msg)
+        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([0,16])))
+        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([16,16])))
+        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([32,16])))
+        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([48,16])))
         if not self._config["url"].startswith("serial://"):
             self._heartbeat = self.loop.call_later(120, self._reset_connection)
 
