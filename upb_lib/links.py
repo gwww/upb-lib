@@ -30,6 +30,9 @@ class Links(Elements):
         pim.add_handler(UpbCommand.ACTIVATE, self._activate_handler)
         pim.add_handler(UpbCommand.DEACTIVATE, self._deactivate_handler)
 
+    def sync(self):
+        pass
+
     def _activate_deactivate(self, link_id, link_levels):
         act = "Activate" if link_levels else "Deactivate"
         if link_id not in self.elements:

@@ -4,12 +4,17 @@ Constants used across package
 
 from enum import Enum
 
+PIM_ID = 0xff
 
 class UpbCommand(Enum):
     """UPB commands"""
 
     ACTIVATE = 0x20
     DEACTIVATE = 0x21
+    GOTO = 0x22
+    REPORT_STATE = 0x30
+
+    """UPB responses"""
     DEVICE_STATE_REPORT = 0x86
     REGISTER_VALUES_REPORT = 0x90
 

@@ -4,6 +4,7 @@ import logging
 
 from .const import UpbCommand
 from .elements import Element, Elements
+from .message import encode_report_state
 
 LOG = logging.getLogger(__name__)
 
@@ -17,9 +18,21 @@ class Light(Element):
         self.version = None
         self.product = None
         self.kind = None
-        self.upb_id = None
         self.network_id = None
+        self.upb_id = None
 
+    def level(self, level, time=0):
+        """(Helper) Set light to specified level"""
+        if level <= 0:
+            self._elk.send(pf_encode(self._index))
+        elif level >= 98:
+            self._elk.send(pn_encode(self._index))
+        else:
+            self._elk.send(pc_encode(self._index, 9, level, time))
+
+    def toggle(self):
+        """(Helper) Toggle light"""
+        self._elk.send(pt_encode(self._index))
 
 class Lights(Elements):
     """Handling for multiple lights"""
@@ -31,11 +44,16 @@ class Lights(Elements):
         pim.add_handler(UpbCommand.REGISTER_VALUES_REPORT,
                         self._register_values_report_handler)
 
+    def sync(self):
+        for light_id in self.elements:
+            light = self.elements[light_id]
+            self.pim.send(encode_report_state(light.network_id, light.upb_id))
+
     def _device_state_report_handler(self, light_id, dim_level):
         light = self.pim.lights.elements.get(light_id)
         if light:
             light.setattr("status", dim_level)
-            LOG.debug("Light %s new dim level is %d", light.name, light.status)
+            LOG.debug("Light %s dim level is %d", light.name, light.status)
 
     def _register_values_report_handler(self, data):
         if len(data) != 17:

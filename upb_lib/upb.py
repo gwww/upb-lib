@@ -6,7 +6,7 @@ import logging
 from importlib import import_module
 import serial_asyncio
 
-from .message import encode_control_word, encode_message, MessageDecode
+from .message import get_control_word, encode_message, MessageDecode
 from .parse_upstart import process_upstart_file
 from .proto import Connection
 from .util import parse_url
@@ -83,13 +83,22 @@ class UpbPim:
         self._conn = conn
         self._transport = transport
         self._connection_retry_timer = 1
-        # self.call_sync_handlers()
-        control = encode_control_word(link=False, repeater=0, ack=1,
-                                      tx_cnt=0, tx_seq=0)
-        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([0,16])))
-        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([16,16])))
-        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([32,16])))
-        self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([48,16])))
+
+        # The intention of this is to clear anything in the PIM receive buffer.
+        # A number of times on startup error(s) (PE) are returned. This too will
+        # return an error, but hopefully resets the PIM
+        self.send('')
+
+        self.call_sync_handlers()
+        # control = get_control_word(link=False)
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([0,16])))
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([16,16])))
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([32,16])))
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([48,16])))
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([64,16])))
+        # self.send(encode_message(control, 194, 1, 255, 0x10, bytearray([80,16])))
+        # self.send(encode_message(control, 194, 9, 255, 0x30))
+
         if not self._config["url"].startswith("serial://"):
             self._heartbeat = self.loop.call_later(120, self._reset_connection)
 

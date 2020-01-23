@@ -72,6 +72,7 @@ class Elements:
     def __init__(self, pim):
         self.pim = pim
         self.elements = {}
+        self.pim.add_sync_handler(self.sync)
 
     def add_element(self, index, element):
         self.elements[index] = element

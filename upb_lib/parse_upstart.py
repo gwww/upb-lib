@@ -33,8 +33,8 @@ def _process_file(pim, file):
             light = Light(light_id, pim)
             pim.lights.add_element(light_id, light)
 
-            light.network_id = network_id
-            light.upb_id = fields[1]
+            light.network_id = int(network_id)
+            light.upb_id = int(fields[1])
             light.name = "{} {}".format(fields[11], fields[12])
             light.version = "{}.{}".format(fields[5], fields[6])
 

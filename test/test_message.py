@@ -2,16 +2,16 @@ import pytest
 from unittest.mock import Mock
 
 from upb_lib.message import (
-    encode_control_word,
+    get_control_word,
     encode_message,
 )
 
-def test_encode_control_word_all_zeros():
-    assert "{:04X}".format(encode_control_word(False, 0, 0, 0, 0)) == "0000"
+def test_get_control_word_all_zeros():
+    assert "{:04X}".format(get_control_word(False, 0, 0, 0, 0)) == "0000"
 
 
-def test_encode_control_word_all_ones():
-    assert "{:04X}".format(encode_control_word(True, 3, 7, 3, 3)) == "E07F"
+def test_get_control_word_all_ones():
+    assert "{:04X}".format(get_control_word(True, 3, 7, 3, 3)) == "E07F"
 
 
 def test_encode_message():

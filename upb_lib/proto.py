@@ -6,7 +6,6 @@ from functools import reduce
 import logging
 
 from .const import PimCommand
-from .message import get_pim_command
 
 LOG = logging.getLogger(__name__)
 
@@ -64,19 +63,23 @@ class Connection(asyncio.Protocol):
         while "\r" in self._buffer:
             line, self._buffer = self._buffer.split("\r", 1)
             LOG.debug("message received: %10s '%s'", self._msgmap[line[1]], line)
-            pim_command = get_pim_command(line)
+
+            pim_command = line[:2]
             if pim_command == 'PA':  # Accept
                 self._cancel_timer()
                 if self._queued_writes:
                     self._queued_writes.pop(0)
-                self._process_write_queue()
+                    self._process_write_queue()
             elif pim_command == 'PB':  # Busy
-                self._cancel_timer()
+                self._start_timer(1.0)
             elif pim_command == 'PE':  # Error
                 self._cancel_timer()
                 if self._queued_writes:
-                    self._queued_writes.pop(0)
-            elif pim_command == 'PR':  # Report
+                    self._queued_writes[0].retry_count -= 1
+                    if self._queued_writes[0].retry_count == 0:
+                        self._queued_writes.pop(0)
+                    self._process_write_queue()
+            elif pim_command == 'PR':  # PIM Register Report
                 pass
             elif pim_command == 'PK':  # Ack
                 pass
@@ -98,23 +101,18 @@ class Connection(asyncio.Protocol):
 
         self._send(data, timeout, pim_cmd)
 
-    def _successful_write(self):
+    def _cleanup(self):
         self._cancel_timer()
-        if self._queued_writes:
-            self._queued_writes.pop(0)
-        self._process_write_queue()
+        self._queued_writes = []
+        self._buffer = ""
 
     def _response_required_timeout(self):
         self._timeout(True)
         self._timeout_task = None
         self._process_write_queue()
 
-    def _cleanup(self):
-        self._cancel_timer()
-        self._queued_writes = []
-        self._buffer = ""
-
     def _start_timer(self, timeout):
+        self._cancel_timer()
         if timeout > 0:
             self._timeout_task = self.loop.call_later(
                 timeout, self._response_required_timeout)
