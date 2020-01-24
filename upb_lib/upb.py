@@ -59,9 +59,7 @@ class UpbPim:
                 )
             else:
                 await asyncio.wait_for(
-                    self.loop.create_connection(
-                        conn, host=dest, port=param, ssl=None
-                    ),
+                    self.loop.create_connection(conn, host=dest, port=param, ssl=None),
                     timeout=30,
                 )
         except (ValueError, OSError, asyncio.TimeoutError) as err:
@@ -87,7 +85,7 @@ class UpbPim:
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
         # return an error, but hopefully resets the PIM
-        self.send('')
+        self.send("")
 
         self.call_sync_handlers()
         # control = get_control_word(link=False)

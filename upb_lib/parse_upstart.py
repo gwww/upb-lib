@@ -22,18 +22,18 @@ def _process_file(pim, file):
     pim.links = Links(pim)
 
     for line in file:
-        fields = line.strip().split(',')
+        fields = line.strip().split(",")
 
         # Light record
         if fields[0] == "3":
             # network_id used in future reads, until it changes
-            network_id = fields[2]
+            network_id = int(fields[2])
 
             light_id = "{}/{}".format(network_id, fields[1])
             light = Light(light_id, pim)
             pim.lights.add_element(light_id, light)
 
-            light.network_id = int(network_id)
+            light.network_id = network_id
             light.upb_id = int(fields[1])
             light.name = "{} {}".format(fields[11], fields[12])
             light.version = "{}.{}".format(fields[5], fields[6])
@@ -47,20 +47,25 @@ def _process_file(pim, file):
                 light.kind = fields[7]
 
         # Channel info record
-        elif fields[0] == '8':
+        elif fields[0] == "8":
             light_id = "{}/{}".format(network_id, fields[2])
             light = pim.lights.elements[light_id]
-            light.dimmable = True if fields[3] == '1' else False
+            light.dimmable = True if fields[3] == "1" else False
+
+        elif fields[0] == "0":
+            network_id = int(fields[4])
 
         # Link definition record
-        elif fields[0] == '2':
+        elif fields[0] == "2":
             link_id = int(fields[1])
             link = Link(link_id, pim)
             pim.links.add_element(link_id, link)
             link.name = fields[2]
+            link.network_id = network_id
+            link.link_id = link_id
 
         # Light link definition
-        elif fields[0] == '4':
+        elif fields[0] == "4":
             link_id = int(fields[4])
             if link_id == 255:
                 continue

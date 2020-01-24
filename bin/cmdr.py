@@ -108,7 +108,7 @@ class Commands:
 
         self.element_cmds = {}
         self.subcommands = {}
-        for element in ['lights', 'links']:
+        for element in ["lights", "links"]:
             if element == "panel":
                 fn = self.panel_print
                 cmd = element

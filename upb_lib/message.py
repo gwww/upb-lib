@@ -9,7 +9,7 @@ from functools import reduce
 import logging
 import re
 
-from .const import UpbCommand, Max, PIM_ID
+from .const import UpbCommand, PIM_ID
 from .util import light_id
 
 LOG = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class MessageDecode:
             LOG.debug("Repeated message!!!")
             return
 
-        control = int.from_bytes(msg[0:2], byteorder='big')
+        control = int.from_bytes(msg[0:2], byteorder="big")
         self.link = (control & 0x8000) != 0
         self.repeater_request = (control >> 13) & 3
         self.length = (control >> 8) & 31
@@ -85,8 +85,9 @@ class MessageDecode:
             decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
             decoder = getattr(self, decoder_name)
         except:
-            LOG.warn("Unknown/upsupported UPB message type 0x{:02x}".
-                     format(self.msg_id))
+            LOG.warn(
+                "Unknown/upsupported UPB message type 0x{:02x}".format(self.msg_id)
+            )
             return
 
         decoded_msg = decoder()
@@ -95,7 +96,7 @@ class MessageDecode:
 
     def _repeated_message(self, msg):
         current_message = msg.copy()
-        current_message[1] = current_message[1] & 0xfc # Clear sequence field
+        current_message[1] = current_message[1] & 0xFC  # Clear sequence field
         if current_message == self._last_message:
             return True
         self._last_message = current_message
@@ -105,16 +106,16 @@ class MessageDecode:
         return light_id(self.network_id, self.src_id, 0)
 
     def _decode_activate(self):
-        return {'link_id': self.dest_id}
+        return {"link_id": self.dest_id}
 
     def _decode_deactivate(self):
-        return {'link_id': self.dest_id}
+        return {"link_id": self.dest_id}
 
     def _decode_device_state_report(self):
-        return {'light_id': self._light_id(), 'dim_level': self.data[0]}
+        return {"light_id": self._light_id(), "dim_level": self.data[0]}
 
     def _decode_register_values_report(self):
-        return {'data': self.data}
+        return {"data": self.data}
 
     def _unknown_decode(self, msg):
         """Generic handler called when no specific handler exists"""
@@ -135,45 +136,58 @@ def get_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
     return control
 
 
-def encode_message(control, network_id, dest_id, src_id, msg_code, data=''):
+def encode_message(control, network_id, dest_id, src_id, msg_code, data=""):
     """Encode a message for the PIM, assumes data formatted"""
     length = 7 + len(data)
     control = control | (length << 8)
     msg = bytearray(length)
-    msg[0:2] = control.to_bytes(2, byteorder='big')
+    msg[0:2] = control.to_bytes(2, byteorder="big")
     msg[2] = network_id
     msg[3] = dest_id
     msg[4] = src_id
     msg[5] = msg_code
     if data:
-        msg[6:len(data)+6] = data
+        msg[6 : len(data) + 6] = data
 
     # Checksum
     msg[-1] = (256 - reduce(lambda x, y: x + y, msg)) % 256
 
     return msg.hex().upper()
 
-def _ctl(ctl):
+
+def _ctl(ctl, link=False):
     if ctl == -1:
-        return get_control_word(link=False)
+        return get_control_word(link)
     return ctl
+
 
 def encode_activate_link(network_id, dest_id, ctl=-1):
     """Activate link"""
-    return encode_message(_ctl(ctl), network_id, dest_id,
-               PIM_ID, UpbCommand.ACTIVATE.value)
+    return encode_message(
+        _ctl(ctl,True), network_id, dest_id, PIM_ID, UpbCommand.ACTIVATE.value
+    )
+
 
 def encode_deactivate_link(network_id, dest_id, ctl=-1):
     """Activate link"""
-    return encode_message(_ctl(ctl), network_id, dest_id,
-               PIM_ID, UpbCommand.DEACTIVATE.value)
+    return encode_message(
+        _ctl(ctl,True), network_id, dest_id, PIM_ID, UpbCommand.DEACTIVATE.value
+    )
 
-def encode_goto(link, network_id, dest_id, ctl=-1):
+
+def encode_goto(link, network_id, dest_id, level, rate, ctl=-1):
     """Goto level, light or link"""
     if ctl == -1:
         ctl = get_control_word(link)
-    return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.GOTO.value)
+    args = bytearray([level])
+    if rate != -1:
+        args.append(rate)
+
+    return encode_message(ctl, network_id, dest_id, PIM_ID,
+                          UpbCommand.GOTO.value, args)
+
 
 def encode_report_state(network_id, dest_id, ctl=-1):
-    return encode_message(_ctl(ctl), network_id, dest_id,
-               PIM_ID, UpbCommand.REPORT_STATE.value)
+    return encode_message(
+        _ctl(ctl), network_id, dest_id, PIM_ID, UpbCommand.REPORT_STATE.value
+    )

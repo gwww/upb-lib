@@ -1,10 +1,8 @@
 import pytest
 from unittest.mock import Mock
 
-from upb_lib.message import (
-    get_control_word,
-    encode_message,
-)
+from upb_lib.message import get_control_word, encode_message
+
 
 def test_get_control_word_all_zeros():
     assert "{:04X}".format(get_control_word(False, 0, 0, 0, 0)) == "0000"
@@ -15,8 +13,11 @@ def test_get_control_word_all_ones():
 
 
 def test_encode_message():
-    assert encode_message(0x8904, 194, 9, 9, 0x20, 
-                bytearray([0xff, 0xff])) == "8904C2090920FFFF81"
+    assert (
+        encode_message(0x8904, 194, 9, 9, 0x20, bytearray([0xFF, 0xFF]))
+        == "8904C2090920FFFF81"
+    )
+
 
 # def test_decode_raises_value_error_on_bad_message():
 #     decoder = MessageDecode()
