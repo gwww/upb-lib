@@ -41,19 +41,26 @@ class Lights(Elements):
         pim.add_handler(
             UpbCommand.REGISTER_VALUES_REPORT, self._register_values_report_handler
         )
+        pim.add_handler(UpbCommand.GOTO, self._goto_handler)
 
     def sync(self):
         for light_id in self.elements:
             light = self.elements[light_id]
             self.pim.send(encode_report_state(light.network_id, light.upb_id))
 
-    def _device_state_report_handler(self, light_id, dim_level):
-        light = self.pim.lights.elements.get(light_id)
+    def _device_state_report_handler(self, dest_id, level):
+        light = self.pim.lights.elements.get(dest_id)
         if light:
             light.setattr("status", dim_level)
             LOG.debug("Light %s level is %d", light.name, light.status)
 
-    def _register_values_report_handler(self, data):
+    def _goto_handler(self, dest_id, level):
+        light = self.pim.lights.elements.get(dest_id)
+        if light:
+            light.setattr("status", level)
+            LOG.debug("Light %s level is %d", light.name, light.status)
+
+    def _register_values_report_handler(self, dest_id, data):
         if len(data) != 17:
             LOG.debug("Parse register values only accepts 16 registers")
             return

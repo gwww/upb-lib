@@ -96,7 +96,7 @@ class MessageDecode:
 
     def _repeated_message(self, msg):
         current_message = msg.copy()
-        current_message[1] = current_message[1] & 0xFC  # Clear sequence field
+        current_message[1] = current_message[1] & 0b11111100  # Clear sequence field
         if current_message == self._last_message:
             return True
         self._last_message = current_message
@@ -106,16 +106,19 @@ class MessageDecode:
         return light_id(self.network_id, self.src_id, 0)
 
     def _decode_activate(self):
-        return {"link_id": self.dest_id}
+        return {"dest_id": self.dest_id}
 
     def _decode_deactivate(self):
-        return {"link_id": self.dest_id}
+        return {"dest_id": self.dest_id}
 
     def _decode_device_state_report(self):
-        return {"light_id": self._light_id(), "dim_level": self.data[0]}
+        return {"dest_id": self._light_id(), "level": self.data[0]}
+
+    def _decode_goto(self):
+        return {"dest_id": self.dest_id, "level":self.data[0]}
 
     def _decode_register_values_report(self):
-        return {"data": self.data}
+        return {"dest_id": self.dest_id, "data": self.data}
 
     def _unknown_decode(self, msg):
         """Generic handler called when no specific handler exists"""

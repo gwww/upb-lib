@@ -1,6 +1,7 @@
 """Definition of an link (scene)"""
 
 from collections import namedtuple
+from enum import Enum
 import logging
 
 from .const import UpbCommand
@@ -8,6 +9,13 @@ from .elements import Element, Elements
 from .message import encode_goto, encode_activate_link, encode_deactivate_link
 
 LOG = logging.getLogger(__name__)
+
+class SetLinkLevel(Enum):
+    """Level to set light to"""
+
+    ACTIVATE = 1
+    DEACTIVATE = 2
+    GOTO = 3
 
 
 Light_link = namedtuple("Light_link", "light_id, dim_level")
@@ -48,12 +56,15 @@ class Links(Elements):
         super().__init__(pim)
         pim.add_handler(UpbCommand.ACTIVATE, self._activate_handler)
         pim.add_handler(UpbCommand.DEACTIVATE, self._deactivate_handler)
+        pim.add_handler(UpbCommand.GOTO, self._goto_handler)
 
     def sync(self):
+        # link = self.pim.links.elements[11]
+        # link.activate()
         pass
 
-    def _activate_deactivate(self, link_id, link_levels):
-        act = "Activate" if link_levels else "Deactivate"
+    def _activate_deactivate(self, link_id, set_link_level, level=0):
+        act = set_link_level.name.capitalize()
         if link_id not in self.elements:
             LOG.warning(
                 "UPB {} command received for unknown link: {}".format(act, link_id)
@@ -67,15 +78,22 @@ class Links(Elements):
                 continue
 
             light = self.pim.lights.elements[light_link.light_id]
-            light.setattr("status", light_link.dim_level if link_levels else 0)
+            if set_link_level == SetLinkLevel.GOTO:
+                set_level = level
+            elif set_link_level == SetLinkLevel.ACTIVATE:
+                set_level = light_link.dim_level
+            else:
+                set_level = 0
+
+            light.setattr("status", set_level)
             LOG.debug(
-                "  Updating '{}' to dim level {}".format(
-                    light.name, light_link.dim_level if link_levels else 0
-                )
-            )
+                "  Updating '{}' to dim level {}".format(light.name, set_level))
 
-    def _activate_handler(self, link_id):
-        self._activate_deactivate(link_id, True)
+    def _activate_handler(self, dest_id):
+        self._activate_deactivate(dest_id, SetLinkLevel.ACTIVATE)
 
-    def _deactivate_handler(self, link_id):
-        self._activate_deactivate(link_id, False)
+    def _deactivate_handler(self, dest_id):
+        self._activate_deactivate(dest_id, SetLinkLevel.DEACTIVATE)
+
+    def _goto_handler(self, dest_id, level):
+        self._activate_deactivate(dest_id, SetLinkLevel.GOTO, level)

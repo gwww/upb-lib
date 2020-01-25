@@ -15,7 +15,7 @@ build:
 	poetry build
 
 upload.test: build
-	poetry publish --repository test
+	poetry publish --repository test.pypi.org
 
 upload: build
 	poetry publish
