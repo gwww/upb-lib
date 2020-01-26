@@ -17,7 +17,7 @@ def main():
             print("Specify url to connect to in UPBPIM_URL environment variable")
             exit(0)
 
-        pim = UpbPim({'url': url, 'UPStartFileExport': 'bin/upb.upe'})
+        pim = UpbPim({'url': url, 'UPStartExportFile': 'bin/upb.upe'})
         pim.connect()
         pim.run()
     except KeyboardInterrupt:

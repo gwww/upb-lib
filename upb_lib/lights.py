@@ -14,7 +14,7 @@ class Light(Element):
 
     def __init__(self, index, pim):
         super().__init__(index, pim)
-        self.status = None
+        self.status = 0
         self.version = None
         self.product = None
         self.kind = None
@@ -27,7 +27,10 @@ class Light(Element):
             level = 0
         elif level > 99:
             level = 100
+        if rate > 255:
+            rate = 255
         self._pim.send(encode_goto(False, self.network_id, self.upb_id, level, rate))
+        self.setattr("status", level)
 
 
 class Lights(Elements):
@@ -51,7 +54,7 @@ class Lights(Elements):
     def _device_state_report_handler(self, dest_id, level):
         light = self.pim.lights.elements.get(dest_id)
         if light:
-            light.setattr("status", dim_level)
+            light.setattr("status", level)
             LOG.debug("Light %s level is %d", light.name, light.status)
 
     def _goto_handler(self, dest_id, level):

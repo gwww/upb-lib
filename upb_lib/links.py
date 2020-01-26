@@ -10,15 +10,8 @@ from .message import encode_goto, encode_activate_link, encode_deactivate_link
 
 LOG = logging.getLogger(__name__)
 
-class SetLinkLevel(Enum):
-    """Level to set light to"""
 
-    ACTIVATE = 1
-    DEACTIVATE = 2
-    GOTO = 3
-
-
-Light_link = namedtuple("Light_link", "light_id, dim_level")
+LightLink = namedtuple("LightLink", "light_id, dim_level")
 
 
 class Link(Element):
@@ -29,6 +22,7 @@ class Link(Element):
         self.lights = []
         self.network_id = None
         self.link_id = None
+        self.status = 0
 
     def add_light(self, light_link):
         self.lights.append(light_link)
@@ -36,18 +30,26 @@ class Link(Element):
     def activate(self):
         """(Helper) Activate link"""
         self._pim.send(encode_activate_link(self.network_id, self.link_id))
+        self.setattr("status", 100)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
+        self.setattr("status", 0)
 
-    def level(self, level, rate=-1):
+    def turn_on(self, brightness=-1, rate=-1):
         """(Helper) Set lights in link to specified level"""
-        if level < 0:
-            level = 0
-        elif level > 99:
-            level = 100
-        self._pim.send(encode_goto(True, self.network_id, self.link_id, level, rate))
+        if brightness < 0:
+            self.activate()
+        else:
+            if brightness > 100:
+                brightness = 100
+
+            self._pim.send(
+                encode_goto(True, self.network_id, self.link_id, brightness, rate)
+            )
+            self.setattr("status", brightness)
+
 
 class Links(Elements):
     """Handling for multiple lights"""
@@ -59,12 +61,10 @@ class Links(Elements):
         pim.add_handler(UpbCommand.GOTO, self._goto_handler)
 
     def sync(self):
-        # link = self.pim.links.elements[11]
-        # link.activate()
         pass
 
-    def _activate_deactivate(self, link_id, set_link_level, level=0):
-        act = set_link_level.name.capitalize()
+    def _activate_deactivate(self, link_id, upb_cmd, level=0):
+        act = upb_cmd.name.capitalize()
         if link_id not in self.elements:
             LOG.warning(
                 "UPB {} command received for unknown link: {}".format(act, link_id)
@@ -78,9 +78,9 @@ class Links(Elements):
                 continue
 
             light = self.pim.lights.elements[light_link.light_id]
-            if set_link_level == SetLinkLevel.GOTO:
+            if upb_cmd == UpbCommand.GOTO:
                 set_level = level
-            elif set_link_level == SetLinkLevel.ACTIVATE:
+            elif upb_cmd == UpbCommand.ACTIVATE:
                 set_level = light_link.dim_level
             else:
                 set_level = 0
@@ -90,10 +90,10 @@ class Links(Elements):
                 "  Updating '{}' to dim level {}".format(light.name, set_level))
 
     def _activate_handler(self, dest_id):
-        self._activate_deactivate(dest_id, SetLinkLevel.ACTIVATE)
+        self._activate_deactivate(dest_id, UpbCommand.ACTIVATE)
 
     def _deactivate_handler(self, dest_id):
-        self._activate_deactivate(dest_id, SetLinkLevel.DEACTIVATE)
+        self._activate_deactivate(dest_id, UpbCommand.DEACTIVATE)
 
     def _goto_handler(self, dest_id, level):
-        self._activate_deactivate(dest_id, SetLinkLevel.GOTO, level)
+        self._activate_deactivate(dest_id, UpbCommand.GOTO, level)

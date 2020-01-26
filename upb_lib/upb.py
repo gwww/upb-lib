@@ -27,11 +27,10 @@ class UpbPim:
         self._connection_retry_timer = 1
         self._message_decode = MessageDecode()
         self._sync_handlers = []
-        self._descriptions_in_progress = {}
         self._heartbeat = None
 
         # Setup for all the types of elements tracked
-        process_upstart_file(self, config["UPStartFileExport"])
+        process_upstart_file(self, config["UPStartExportFile"])
 
     def _create_element(self, element):
         module = import_module("upb_lib." + element)
