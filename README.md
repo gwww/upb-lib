@@ -2,7 +2,7 @@
 
 Library for interacting with UPB PIM/CIM
 
-https://github.com/gwww/upb
+https://github.com/gwww/upb-lib
 
 ## Requirements
 
@@ -39,7 +39,7 @@ This project uses [poetry](https://poetry.eustace.io/) for development dependenc
 To get started developing:
 
 ```
-git clone https://github.com/gwww/upb.git
+git clone https://github.com/gwww/upb-lib.git
 cd upb
 poetry install
 poetry shell # Or activate the created virtual environment
