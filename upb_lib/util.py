@@ -16,4 +16,4 @@ def parse_url(url):
 
 def light_id(network, light_id, channel):
     """Format a light ID"""
-    return "{}/{}".format(network, light_id)
+    return "{}_{}".format(network, light_id)

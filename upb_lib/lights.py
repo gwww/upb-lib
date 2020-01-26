@@ -20,17 +20,26 @@ class Light(Element):
         self.kind = None
         self.network_id = None
         self.upb_id = None
+        self.dimmable = None
 
-    def level(self, level, rate=-1):
-        """(Helper) Set light to specified level"""
-        if level < 0:
-            level = 0
-        elif level > 99:
-            level = 100
+    def _level(self, brightness, rate):
         if rate > 255:
             rate = 255
-        self._pim.send(encode_goto(False, self.network_id, self.upb_id, level, rate))
-        self.setattr("status", level)
+
+        self._pim.send(
+            encode_goto(False, self.network_id, self.upb_id, brightness, rate)
+        )
+        self.setattr("status", brightness)
+
+    def turn_on(self, brightness=100, rate=-1):
+        """(Helper) Set light to specified level"""
+        if not self.dimmable or brightness > 100:
+            brightness = 100
+        self._level(brightness, rate)
+
+    def turn_off(self, rate=-1):
+        """(Helper) Turn light off."""
+        self._level(0, rate)
 
 
 class Lights(Elements):
