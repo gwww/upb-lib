@@ -9,6 +9,7 @@ from .message import encode_report_state, encode_goto
 LOG = logging.getLogger(__name__)
 
 
+
 class Light(Element):
     """Class representing a Light"""
 
@@ -60,19 +61,27 @@ class Lights(Elements):
             light = self.elements[light_id]
             self.pim.send(encode_report_state(light.network_id, light.upb_id))
 
-    def _device_state_report_handler(self, dest_id, level):
-        light = self.pim.lights.elements.get(dest_id)
+    def _device_state_report_handler(self, msg):
+        index = "{}_{}".format(msg.network_id, msg.src_id)
+        light = self.pim.lights.elements.get(index)
         if light:
+            level = msg.data[0]
             light.setattr("status", level)
-            LOG.debug("Light %s level is %d", light.name, light.status)
+            LOG.debug("(DSR) Light %s level is %d", light.name, light.status)
 
-    def _goto_handler(self, dest_id, level):
-        light = self.pim.lights.elements.get(dest_id)
+    def _goto_handler(self, msg):
+        if msg.link:
+            return
+        index = "{}_{}".format(msg.network_id, msg.dest_id)
+        light = self.pim.lights.elements.get(index)
         if light:
+            level = msg.data[0]
             light.setattr("status", level)
-            LOG.debug("Light %s level is %d", light.name, light.status)
+            LOG.debug("(GOTO) Light %s level is %d", light.name, light.status)
 
-    def _register_values_report_handler(self, dest_id, data):
+    def _register_values_report_handler(self, msg):
+        index = "{}_{}".format(msg.network_id, msg.src_id)
+        data = msg.data
         if len(data) != 17:
             LOG.debug("Parse register values only accepts 16 registers")
             return

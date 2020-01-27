@@ -31,11 +31,13 @@ class Link(Element):
         """(Helper) Activate link"""
         self._pim.send(encode_activate_link(self.network_id, self.link_id))
         self.setattr("status", 100)
+        self._update_light_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
         self.setattr("status", 0)
+        self._update_light_levels(UpbCommand.DEACTIVATE)
 
     def turn_on(self, brightness=-1, rate=-1):
         """(Helper) Set lights in link to specified level"""
@@ -49,6 +51,26 @@ class Link(Element):
                 encode_goto(True, self.network_id, self.link_id, brightness, rate)
             )
             self.setattr("status", brightness)
+            self._update_light_levels(UpbCommand.GOTO, brightness)
+
+    def _update_light_levels(self, upb_cmd, level = 0):
+        LOG.debug("{} '{}' ({})".
+                  format(upb_cmd.name.capitalize(), self.name, self.index))
+        for light_link in self.lights:
+            light = self._pim.lights.elements.get(light_link.light_id)
+            if not light:
+                continue
+
+            if upb_cmd == UpbCommand.GOTO:
+                set_level = level
+            elif upb_cmd == UpbCommand.ACTIVATE:
+                set_level = light_link.dim_level
+            else:
+                set_level = 0
+
+            light.setattr("status", set_level)
+            LOG.debug(
+                "  Updating '{}' to dim level {}".format(light.name, set_level))
 
 
 class Links(Elements):
@@ -63,37 +85,39 @@ class Links(Elements):
     def sync(self):
         pass
 
-    def _activate_deactivate(self, link_id, upb_cmd, level=0):
-        act = upb_cmd.name.capitalize()
-        if link_id not in self.elements:
-            LOG.warning(
-                "UPB {} command received for unknown link: {}".format(act, link_id)
-            )
+    def _activate_deactivate(self, msg, upb_cmd, level=0):
+        if not msg.link:
+            return
+        index = "{}_{}".format(msg.network_id, msg.dest_id)
+        link = self.elements.get(index)
+        if not link:
+            LOG.warning("UPB command received for unknown link: {}".format(index))
             return
 
-        LOG.debug("{} '{}' ({})".format(act, self.elements[link_id].name, link_id))
-        lights = self.elements[link_id].lights
-        for light_link in lights:
-            if light_link.light_id not in self.pim.lights.elements:
-                continue
+        link._update_light_levels(upb_cmd, level)
 
-            light = self.pim.lights.elements[light_link.light_id]
-            if upb_cmd == UpbCommand.GOTO:
-                set_level = level
-            elif upb_cmd == UpbCommand.ACTIVATE:
-                set_level = light_link.dim_level
-            else:
-                set_level = 0
+        # LOG.debug("{} '{}' ({})".format(act, link.name, index))
+        # for light_link in link.lights:
+        #     light = self.pim.lights.elements.get(light_link.light_id)
+        #     if not light:
+        #         continue
 
-            light.setattr("status", set_level)
-            LOG.debug(
-                "  Updating '{}' to dim level {}".format(light.name, set_level))
+        #     if upb_cmd == UpbCommand.GOTO:
+        #         set_level = level
+        #     elif upb_cmd == UpbCommand.ACTIVATE:
+        #         set_level = light_link.dim_level
+        #     else:
+        #         set_level = 0
 
-    def _activate_handler(self, dest_id):
-        self._activate_deactivate(dest_id, UpbCommand.ACTIVATE)
+        #     light.setattr("status", set_level)
+        #     LOG.debug(
+        #         "  Updating '{}' to dim level {}".format(light.name, set_level))
 
-    def _deactivate_handler(self, dest_id):
-        self._activate_deactivate(dest_id, UpbCommand.DEACTIVATE)
+    def _activate_handler(self, msg):
+        self._activate_deactivate(msg, UpbCommand.ACTIVATE)
 
-    def _goto_handler(self, dest_id, level):
-        self._activate_deactivate(dest_id, UpbCommand.GOTO, level)
+    def _deactivate_handler(self, msg):
+        self._activate_deactivate(msg, UpbCommand.DEACTIVATE)
+
+    def _goto_handler(self, msg):
+        self._activate_deactivate(msg, UpbCommand.GOTO, msg.data[0])

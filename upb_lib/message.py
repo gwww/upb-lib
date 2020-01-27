@@ -74,6 +74,11 @@ class MessageDecode:
         self.msg_id = msg[5]
         self.data = msg[6:]
 
+        self.index = "{}_{}".format(self.network_id, self.src_id)
+
+        for handler in self._handlers.get(self.msg_id, []):
+            handler(self)
+
         # LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
         #           self.link, self.repeater_request,
         #           self.length, self.ack_request,
@@ -81,18 +86,17 @@ class MessageDecode:
         # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
         #           self.dest_id, self.src_id, self.msg_id)
 
-        try:
-            decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
-            decoder = getattr(self, decoder_name)
-        except:
-            LOG.warn(
-                "Unknown/upsupported UPB message type 0x{:02x}".format(self.msg_id)
-            )
-            return
-
-        decoded_msg = decoder()
-        for handler in self._handlers.get(self.msg_id, []):
-            handler(**decoded_msg)
+        # try:
+        #     decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
+        #     decoder = getattr(self, decoder_name)
+        # except:
+        #     LOG.warn(
+        #         "Unknown/upsupported UPB message type 0x{:02x}".format(self.msg_id)
+        #     )
+        #     return
+        # decoded_msg = decoder()
+        # for handler in self._handlers.get(self.msg_id, []):
+        #     handler(**decoded_msg)
 
     def _repeated_message(self, msg):
         current_message = msg.copy()
@@ -106,19 +110,19 @@ class MessageDecode:
         return light_id(self.network_id, self.src_id, 0)
 
     def _decode_activate(self):
-        return {"dest_id": self.dest_id}
+        return {"index": self.index}
 
     def _decode_deactivate(self):
-        return {"dest_id": self.dest_id}
+        return {"index": self.index}
 
     def _decode_device_state_report(self):
-        return {"dest_id": self._light_id(), "level": self.data[0]}
+        return {"index": self.index, "level": self.data[0]}
 
     def _decode_goto(self):
-        return {"dest_id": self.dest_id, "level":self.data[0]}
+        return {"index": self.index, "level":self.data[0]}
 
     def _decode_register_values_report(self):
-        return {"dest_id": self.dest_id, "data": self.data}
+        return {"index": self.index, "data": self.data}
 
     def _unknown_decode(self, msg):
         """Generic handler called when no specific handler exists"""
