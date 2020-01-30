@@ -22,7 +22,6 @@ class Link(Element):
         self.lights = []
         self.network_id = None
         self.link_id = None
-        self.status = 0
 
     def add_light(self, light_link):
         self.lights.append(light_link)
@@ -30,14 +29,21 @@ class Link(Element):
     def activate(self):
         """(Helper) Activate link"""
         self._pim.send(encode_activate_link(self.network_id, self.link_id))
-        self.setattr("status", 100)
         self._update_light_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
-        self.setattr("status", 0)
         self._update_light_levels(UpbCommand.DEACTIVATE)
+
+    def goto(self, brightness, rate=-1):
+        if brightness > 100:
+            brightness = 100
+
+        self._pim.send(
+            encode_goto(True, self.network_id, self.link_id, brightness, rate)
+        )
+        self._update_light_levels(UpbCommand.GOTO, brightness)
 
     def turn_on(self, brightness=-1, rate=-1):
         """(Helper) Set lights in link to specified level"""

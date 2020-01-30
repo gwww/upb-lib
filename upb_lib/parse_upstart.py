@@ -2,9 +2,13 @@
 Parse UPStart file and create UPB light/link objects    
 """
 
+import logging
+
 from .const import PRODUCTS
-from .lights import Light, Lights
-from .links import Link, Links, LightLink
+from .lights import Light
+from .links import Link, LightLink
+
+LOG = logging.getLogger(__name__)
 
 
 def process_upstart_file(pim, filename):
@@ -13,14 +17,10 @@ def process_upstart_file(pim, filename):
             _process_file(pim, f)
             f.close()
     except EnvironmentError as e:
-        print("Cannot open UPStart file '{}': {}".format(filename, e))
+        LOG.error(f"Cannot open UPStart file '{filename}': {e}")
 
 
 def _process_file(pim, file):
-
-    pim.lights = Lights(pim)
-    pim.links = Links(pim)
-
     for line in file:
         fields = line.strip().split(",")
 

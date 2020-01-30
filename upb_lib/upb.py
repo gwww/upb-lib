@@ -10,6 +10,8 @@ from .message import get_control_word, encode_message, MessageDecode
 from .parse_upstart import process_upstart_file
 from .proto import Connection
 from .util import parse_url
+from .lights import Lights
+from .links import Links
 
 LOG = logging.getLogger(__name__)
 
@@ -28,9 +30,13 @@ class UpbPim:
         self._message_decode = MessageDecode()
         self._sync_handlers = []
         self._heartbeat = None
+        self.lights = Lights(self)
+        self.links = Links(self)
 
         # Setup for all the types of elements tracked
-        process_upstart_file(self, config["UPStartExportFile"])
+        export_filepath = config.get("UPStartExportFile")
+        if export_filepath:
+            process_upstart_file(self, config["UPStartExportFile"])
 
     def _create_element(self, element):
         module = import_module("upb_lib." + element)
@@ -58,8 +64,8 @@ class UpbPim:
                 )
             else:
                 await asyncio.wait_for(
-                    self.loop.create_connection(conn, host=dest, port=param, ssl=None),
-                    timeout=30,
+                    self.loop.create_connection(
+                        conn, host=dest, port=param, ssl=None), timeout=30,
                 )
         except (ValueError, OSError, asyncio.TimeoutError) as err:
             LOG.warning(
