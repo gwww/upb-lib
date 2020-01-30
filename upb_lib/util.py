@@ -14,6 +14,11 @@ def parse_url(url):
     return (scheme, host, int(port))
 
 
-def light_id(network, light_id, channel):
+def light_index(network, light_id, channel):
     """Format a light ID"""
-    return "{}_{}".format(network, light_id)
+    return f"{network}_{light_id}_{channel}"
+
+
+def link_index(network, link_id):
+    """Format a link ID"""
+    return f"{network}_{link_id}"

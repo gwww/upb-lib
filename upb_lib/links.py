@@ -7,6 +7,7 @@ import logging
 from .const import UpbCommand
 from .elements import Element, Elements
 from .message import encode_goto, encode_activate_link, encode_deactivate_link
+from .util import link_index
 
 LOG = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class Link(Element):
             brightness = 100
 
         self._pim.send(
-            encode_goto(True, self.network_id, self.link_id, brightness, rate)
+            encode_goto(True, self.network_id, self.link_id, 0, brightness, rate)
         )
         self._update_light_levels(UpbCommand.GOTO, brightness)
 
@@ -79,7 +80,7 @@ class Links(Elements):
     def _activate_deactivate(self, msg, upb_cmd, level=0):
         if not msg.link:
             return
-        index = "{}_{}".format(msg.network_id, msg.dest_id)
+        index = link_index(msg.network_id, msg.dest_id)
         link = self.elements.get(index)
         if not link:
             LOG.warning(f"UPB command received for unknown link: {index}")

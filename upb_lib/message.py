@@ -10,7 +10,6 @@ import logging
 import re
 
 from .const import UpbCommand, PIM_ID
-from .util import light_id
 
 LOG = logging.getLogger(__name__)
 
@@ -106,9 +105,6 @@ class MessageDecode:
         self._last_message = current_message
         return False
 
-    def _light_id(self):
-        return light_id(self.network_id, self.src_id, 0)
-
     def _decode_activate(self):
         return {"index": self.index}
 
@@ -182,12 +178,16 @@ def encode_deactivate_link(network_id, dest_id, ctl=-1):
     )
 
 
-def encode_goto(link, network_id, dest_id, level, rate, ctl=-1):
+def encode_goto(link, network_id, dest_id, channel, level, rate, ctl=-1):
     """Goto level, light or link"""
+    rate = int(rate)
     if ctl == -1:
         ctl = get_control_word(link)
     args = bytearray([level])
-    if rate != -1:
+    if not link and channel > 0:
+        args.append(0xff if rate == -1 else rate)
+        args.append(channel)
+    elif rate != -1:
         args.append(rate)
 
     return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.GOTO.value, args)

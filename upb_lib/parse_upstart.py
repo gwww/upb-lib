@@ -7,6 +7,7 @@ import logging
 from .const import PRODUCTS
 from .lights import Light
 from .links import Link, LightLink
+from .util import light_index, link_index
 
 LOG = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def _process_file(pim, file):
         # Link definition record
         elif fields[0] == "2":
             link_id = int(fields[1])
-            index = "{}_{}".format(network_id, link_id)
+            index = link_index(network_id, link_id)
             link = Link(index, pim)
 
             link.name = fields[2]
@@ -44,27 +45,30 @@ def _process_file(pim, file):
             # network_id used in future reads, until it changes
             upb_id = int(fields[1])
             network_id = int(fields[2])
-            index = "{}_{}".format(network_id, upb_id)
-            light = Light(index, pim)
+            number_of_channels = int(fields[8])
+            for channel in range(0, number_of_channels):
+                index = light_index(network_id, upb_id, channel)
+                light = Light(index, pim)
 
-            light.network_id = network_id
-            light.upb_id = upb_id
-            light.name = "{} {}".format(fields[11], fields[12])
-            light.version = "{}.{}".format(fields[5], fields[6])
+                light.network_id = network_id
+                light.upb_id = upb_id
+                light.channel = 0
+                light.name = "{} {}".format(fields[11], fields[12])
+                light.version = "{}.{}".format(fields[5], fields[6])
 
-            product = "{}/{}".format(fields[3], fields[4])
-            if product in PRODUCTS:
-                light.product = PRODUCTS[product][0]
-                light.kind = PRODUCTS[product][1]
-            else:
-                light.product = product
-                light.kind = fields[7]
+                product = "{}/{}".format(fields[3], fields[4])
+                if product in PRODUCTS:
+                    light.product = PRODUCTS[product][0]
+                    light.kind = PRODUCTS[product][1]
+                else:
+                    light.product = product
+                    light.kind = fields[7]
 
-            pim.lights.add_element(light)
+                pim.lights.add_element(light)
 
         # Channel info record, only care about dimmable flag
         elif fields[0] == "8":
-            light_id = "{}_{}".format(network_id, fields[2])
+            light_id = light_index(network_id, fields[2], fields[1])
             light = pim.lights.elements[light_id]
             light.dimmable = True if fields[3] == "1" else False
 
@@ -74,7 +78,7 @@ def _process_file(pim, file):
             if link_id == 255:
                 continue
 
-            link_index = "{}_{}".format(network_id, link_id)
-            light_index = "{}_{}".format(network_id, int(fields[3]))
+            link_idx = link_index(network_id, link_id)
+            light_idx = light_index(network_id, fields[3], fields[1])
             dim_level = int(fields[5])
-            pim.links[link_index].add_light(LightLink(light_index, dim_level))
+            pim.links[link_idx].add_light(LightLink(light_idx, dim_level))

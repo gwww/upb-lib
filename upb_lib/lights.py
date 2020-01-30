@@ -5,6 +5,7 @@ import logging
 from .const import UpbCommand
 from .elements import Element, Elements
 from .message import encode_report_state, encode_goto
+from .util import light_index
 
 LOG = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class Light(Element):
         self.kind = None
         self.network_id = None
         self.upb_id = None
+        self.channel = None
         self.dimmable = None
 
     def _level(self, brightness, rate):
@@ -27,7 +29,9 @@ class Light(Element):
             rate = 255
 
         self._pim.send(
-            encode_goto(False, self.network_id, self.upb_id, brightness, rate)
+            encode_goto(
+                False, self.network_id, self.upb_id, self.channel, brightness, rate
+            )
         )
         self.setattr("status", brightness)
 
@@ -61,9 +65,10 @@ class Lights(Elements):
             self.pim.send(encode_report_state(light.network_id, light.upb_id))
 
     def _device_state_report_handler(self, msg):
-        index = "{}_{}".format(msg.network_id, msg.src_id)
+        index = light_index(msg.network_id, msg.src_id, 0)
         light = self.pim.lights.elements.get(index)
         if light:
+            # TODO: how to handle multi-channel lights
             level = msg.data[0]
             light.setattr("status", level)
             LOG.debug("(DSR) Light %s level is %d", light.name, light.status)
@@ -71,15 +76,18 @@ class Lights(Elements):
     def _goto_handler(self, msg):
         if msg.link:
             return
-        index = "{}_{}".format(msg.network_id, msg.dest_id)
+        channel = data[2] if len(data) > 2 else 0
+        index = light_index(msg.network_id, msg.dest_id, channel)
         light = self.pim.lights.elements.get(index)
         if light:
             level = msg.data[0]
             light.setattr("status", level)
-            LOG.debug("(GOTO) Light %s level is %d", light.name, light.status)
+            LOG.debug(
+                "(GOTO) Light {light.name}/{light.index} level is {light.status}"
+            )
 
     def _register_values_report_handler(self, msg):
-        index = "{}_{}".format(msg.network_id, msg.src_id)
+        index = light_index(msg.network_id, msg.src_id, 0)
         data = msg.data
         if len(data) != 17:
             LOG.debug("Parse register values only accepts 16 registers")
