@@ -20,7 +20,7 @@ class _Packet:
         self.retry_count = 1
 
     def __repr__(self):
-        return str(self.__dict__)   
+        return str(self.__dict__)
 
 
 class Connection(asyncio.Protocol):

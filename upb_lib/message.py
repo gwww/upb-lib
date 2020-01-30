@@ -119,7 +119,7 @@ class MessageDecode:
         return {"index": self.index, "level": self.data[0]}
 
     def _decode_goto(self):
-        return {"index": self.index, "level":self.data[0]}
+        return {"index": self.index, "level": self.data[0]}
 
     def _decode_register_values_report(self):
         return {"index": self.index, "data": self.data}
@@ -171,14 +171,14 @@ def _ctl(ctl, link=False):
 def encode_activate_link(network_id, dest_id, ctl=-1):
     """Activate link"""
     return encode_message(
-        _ctl(ctl,True), network_id, dest_id, PIM_ID, UpbCommand.ACTIVATE.value
+        _ctl(ctl, True), network_id, dest_id, PIM_ID, UpbCommand.ACTIVATE.value
     )
 
 
 def encode_deactivate_link(network_id, dest_id, ctl=-1):
     """Activate link"""
     return encode_message(
-        _ctl(ctl,True), network_id, dest_id, PIM_ID, UpbCommand.DEACTIVATE.value
+        _ctl(ctl, True), network_id, dest_id, PIM_ID, UpbCommand.DEACTIVATE.value
     )
 
 
@@ -190,8 +190,7 @@ def encode_goto(link, network_id, dest_id, level, rate, ctl=-1):
     if rate != -1:
         args.append(rate)
 
-    return encode_message(ctl, network_id, dest_id, PIM_ID,
-                          UpbCommand.GOTO.value, args)
+    return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.GOTO.value, args)
 
 
 def encode_report_state(network_id, dest_id, ctl=-1):

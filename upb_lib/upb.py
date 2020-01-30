@@ -64,8 +64,8 @@ class UpbPim:
                 )
             else:
                 await asyncio.wait_for(
-                    self.loop.create_connection(
-                        conn, host=dest, port=param, ssl=None), timeout=30,
+                    self.loop.create_connection(conn, host=dest, port=param, ssl=None),
+                    timeout=30,
                 )
         except (ValueError, OSError, asyncio.TimeoutError) as err:
             LOG.warning(

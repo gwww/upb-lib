@@ -35,6 +35,7 @@ class Link(Element):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
         self._update_light_levels(UpbCommand.DEACTIVATE)
+
     def goto(self, brightness, rate=-1):
         """(Helper) Goto level"""
         if brightness > 100:
@@ -45,7 +46,7 @@ class Link(Element):
         )
         self._update_light_levels(UpbCommand.GOTO, brightness)
 
-    def _update_light_levels(self, upb_cmd, level = 0):
+    def _update_light_levels(self, upb_cmd, level=0):
         LOG.debug(f"{upb_cmd.name.capitalize()} {self.name} {self.index}")
         for light_link in self.lights:
             light = self._pim.lights.elements.get(light_link.light_id)

@@ -9,7 +9,6 @@ from .message import encode_report_state, encode_goto
 LOG = logging.getLogger(__name__)
 
 
-
 class Light(Element):
     """Class representing a Light"""
 
