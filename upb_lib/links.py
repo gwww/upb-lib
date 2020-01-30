@@ -35,8 +35,8 @@ class Link(Element):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
         self._update_light_levels(UpbCommand.DEACTIVATE)
-
     def goto(self, brightness, rate=-1):
+        """(Helper) Goto level"""
         if brightness > 100:
             brightness = 100
 
@@ -45,23 +45,8 @@ class Link(Element):
         )
         self._update_light_levels(UpbCommand.GOTO, brightness)
 
-    def turn_on(self, brightness=-1, rate=-1):
-        """(Helper) Set lights in link to specified level"""
-        if brightness < 0:
-            self.activate()
-        else:
-            if brightness > 100:
-                brightness = 100
-
-            self._pim.send(
-                encode_goto(True, self.network_id, self.link_id, brightness, rate)
-            )
-            self.setattr("status", brightness)
-            self._update_light_levels(UpbCommand.GOTO, brightness)
-
     def _update_light_levels(self, upb_cmd, level = 0):
-        LOG.debug("{} '{}' ({})".
-                  format(upb_cmd.name.capitalize(), self.name, self.index))
+        LOG.debug(f"{upb_cmd.name.capitalize()} {self.name} {self.index}")
         for light_link in self.lights:
             light = self._pim.lights.elements.get(light_link.light_id)
             if not light:
@@ -75,8 +60,7 @@ class Link(Element):
                 set_level = 0
 
             light.setattr("status", set_level)
-            LOG.debug(
-                "  Updating '{}' to dim level {}".format(light.name, set_level))
+            LOG.debug(f"  Updating '{light.name}' to dim level {set_level}")
 
 
 class Links(Elements):
@@ -97,27 +81,10 @@ class Links(Elements):
         index = "{}_{}".format(msg.network_id, msg.dest_id)
         link = self.elements.get(index)
         if not link:
-            LOG.warning("UPB command received for unknown link: {}".format(index))
+            LOG.warning(f"UPB command received for unknown link: {index}")
             return
 
         link._update_light_levels(upb_cmd, level)
-
-        # LOG.debug("{} '{}' ({})".format(act, link.name, index))
-        # for light_link in link.lights:
-        #     light = self.pim.lights.elements.get(light_link.light_id)
-        #     if not light:
-        #         continue
-
-        #     if upb_cmd == UpbCommand.GOTO:
-        #         set_level = level
-        #     elif upb_cmd == UpbCommand.ACTIVATE:
-        #         set_level = light_link.dim_level
-        #     else:
-        #         set_level = 0
-
-        #     light.setattr("status", set_level)
-        #     LOG.debug(
-        #         "  Updating '{}' to dim level {}".format(light.name, set_level))
 
     def _activate_handler(self, msg):
         self._activate_deactivate(msg, UpbCommand.ACTIVATE)
