@@ -1,8 +1,8 @@
 """Definition of an link (scene)"""
-
 from collections import namedtuple
 from enum import Enum
 import logging
+from time import time
 
 from .const import UpbCommand
 from .elements import Element, Elements
@@ -23,6 +23,7 @@ class Link(Element):
         self.lights = []
         self.network_id = None
         self.link_id = None
+        self.last_change = None
 
     def add_light(self, light_link):
         self.lights.append(light_link)
@@ -63,6 +64,7 @@ class Link(Element):
 
             light.setattr("status", set_level)
             LOG.debug(f"  Updating '{light.name}' to dim level {set_level}")
+        self.setattr("last_change", time())
 
 
 class Links(Elements):

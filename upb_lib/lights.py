@@ -76,14 +76,14 @@ class Lights(Elements):
     def _goto_handler(self, msg):
         if msg.link:
             return
-        channel = data[2] if len(data) > 2 else 0
+        channel = msg.data[2] if len(msg.data) > 2 else 0
         index = light_index(msg.network_id, msg.dest_id, channel)
         light = self.pim.lights.elements.get(index)
         if light:
             level = msg.data[0]
             light.setattr("status", level)
             LOG.debug(
-                "(GOTO) Light {light.name}/{light.index} level is {light.status}"
+                f"(GOTO) Light {light.name}/{light.index} level is {light.status}"
             )
 
     def _register_values_report_handler(self, msg):

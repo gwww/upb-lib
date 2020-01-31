@@ -23,6 +23,7 @@ class MessageDecode:
         """Initialize a new Message instance."""
         self._handlers = {}
         self._last_message = bytearray()
+        self._last_sequence = 0
 
     def add_handler(self, message_type, handler):
         """Manage callbacks for message handlers."""
@@ -85,23 +86,30 @@ class MessageDecode:
         # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
         #           self.dest_id, self.src_id, self.msg_id)
 
-        # try:
-        #     decoder_name = "_decode_{}".format(UpbCommand(self.msg_id).name.lower())
-        #     decoder = getattr(self, decoder_name)
-        # except:
-        #     LOG.warn(
-        #         "Unknown/upsupported UPB message type 0x{:02x}".format(self.msg_id)
-        #     )
-        #     return
-        # decoded_msg = decoder()
-        # for handler in self._handlers.get(self.msg_id, []):
-        #     handler(**decoded_msg)
-
-    def _repeated_message(self, msg):
+    def _old_repeated_message(self, msg):
         current_message = msg.copy()
         current_message[1] = current_message[1] & 0b11111100  # Clear sequence field
         if current_message == self._last_message:
             return True
+        self._last_message = current_message
+        return False
+
+    def _repeated_message(self, msg):
+        current_message = msg.copy()
+        current_sequence = current_message[1] & 0b00000011
+
+        if current_sequence <= self._last_sequence:
+            self._last_sequence = current_sequence
+            self._last_message = current_message
+            return False
+
+        self._last_sequence = current_sequence
+
+        # Clear sequence field
+        current_message[1] = current_message[1] & 0b11111100
+        if current_message == self._last_message:
+            return True
+
         self._last_message = current_message
         return False
 
