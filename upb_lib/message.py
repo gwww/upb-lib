@@ -86,14 +86,6 @@ class MessageDecode:
         # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
         #           self.dest_id, self.src_id, self.msg_id)
 
-    def _old_repeated_message(self, msg):
-        current_message = msg.copy()
-        current_message[1] = current_message[1] & 0b11111100  # Clear sequence field
-        if current_message == self._last_message:
-            return True
-        self._last_message = current_message
-        return False
-
     def _repeated_message(self, msg):
         current_message = msg.copy()
         current_sequence = current_message[1] & 0b00000011
@@ -112,30 +104,6 @@ class MessageDecode:
 
         self._last_message = current_message
         return False
-
-    def _decode_activate(self):
-        return {"index": self.index}
-
-    def _decode_deactivate(self):
-        return {"index": self.index}
-
-    def _decode_device_state_report(self):
-        return {"index": self.index, "level": self.data[0]}
-
-    def _decode_goto(self):
-        return {"index": self.index, "level": self.data[0]}
-
-    def _decode_register_values_report(self):
-        return {"index": self.index, "data": self.data}
-
-    def _unknown_decode(self, msg):
-        """Generic handler called when no specific handler exists"""
-        return {"msg_code": msg[2:4], "data": msg[4:-2]}
-
-    def timeout_handler(self, msg_code):
-        """Called directly when a timeout happens when response not received"""
-        for handler in self._handlers.get("timeout", []):
-            handler({"msg_code": msg_code})
 
 
 def get_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
