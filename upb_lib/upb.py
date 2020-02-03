@@ -128,7 +128,8 @@ class UpbPim:
             LOG.debug(err)
 
     def _timeout(self, msg_code):
-        self._message_decode.timeout_handler(msg_code)
+        # TODO self._message_decode.timeout_handler(msg_code)
+        pass
 
     def add_sync_handler(self, sync_handler):
         """Register a fn that synchronizes part of the panel."""

@@ -65,11 +65,17 @@ class Lights(Elements):
             self.pim.send(encode_report_state(light.network_id, light.upb_id))
 
     def _device_state_report_handler(self, msg):
-        index = light_index(msg.network_id, msg.src_id, 0)
-        light = self.pim.lights.elements.get(index)
-        if light:
-            # TODO: how to handle multi-channel lights
-            level = msg.data[0]
+        status_length = len(msg.data)
+        for i in range(0, 100):
+            if i >= status_length:
+                break;
+
+            index = light_index(msg.network_id, msg.src_id, i)
+            light = self.pim.lights.elements.get(index)
+            if not light:
+                break
+
+            level = msg.data[i]
             light.setattr("status", level)
             LOG.debug("(DSR) Light %s level is %d", light.name, light.status)
 
