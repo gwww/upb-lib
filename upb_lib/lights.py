@@ -58,18 +58,21 @@ class Light(Element):
                 False, self.network_id, self.upb_id, self.channel, brightness, rate
             )
         )
+        self.setattr("status", brightness)
 
     def fade_stop(self):
         """(Helper) Stop fading a light."""
         self._pim.send(
             encode_fade_stop(False, self.network_id, self.upb_id, self.channel)
         )
+        self._pim.send(encode_report_state(self.network_id, self.upb_id))
 
     def blink(self, rate=-1):
         """(Helper) Blink a light."""
         self._pim.send(
             encode_blink(False, self.network_id, self.upb_id, self.channel, rate)
         )
+        self.setattr("status", 100)
 
 
 class Lights(Elements):
