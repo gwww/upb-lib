@@ -4,7 +4,13 @@ import logging
 
 from .const import UpbCommand
 from .elements import Element, Elements
-from .message import encode_report_state, encode_goto
+from .message import (
+    encode_blink,
+    encode_report_state,
+    encode_goto,
+    encode_fade_start,
+    encode_fade_stop,
+)
 from .util import light_index
 
 LOG = logging.getLogger(__name__)
@@ -45,6 +51,26 @@ class Light(Element):
         """(Helper) Turn light off."""
         self._level(0, rate)
 
+    def fade_start(self, brightness, rate=-1):
+        """(Helper) Start fading a light."""
+        self._pim.send(
+            encode_fade_start(
+                False, self.network_id, self.upb_id, self.channel, brightness, rate
+            )
+        )
+
+    def fade_stop(self):
+        """(Helper) Stop fading a light."""
+        self._pim.send(
+            encode_fade_stop(False, self.network_id, self.upb_id, self.channel)
+        )
+
+    def blink(self, rate=-1):
+        """(Helper) Blink a light."""
+        self._pim.send(
+            encode_blink(False, self.network_id, self.upb_id, self.channel, rate)
+        )
+
 
 class Lights(Elements):
     """Handling for multiple lights"""
@@ -68,7 +94,7 @@ class Lights(Elements):
         status_length = len(msg.data)
         for i in range(0, 100):
             if i >= status_length:
-                break;
+                break
 
             index = light_index(msg.network_id, msg.src_id, i)
             light = self.pim.lights.elements.get(index)

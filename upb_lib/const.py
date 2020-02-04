@@ -13,6 +13,9 @@ class UpbCommand(Enum):
     ACTIVATE = 0x20
     DEACTIVATE = 0x21
     GOTO = 0x22
+    FADE_START = 0x23
+    FADE_STOP = 0x24
+    BLINK = 0x25
     REPORT_STATE = 0x30
     DEVICE_STATE_REPORT = 0x86
     REGISTER_VALUES_REPORT = 0x90

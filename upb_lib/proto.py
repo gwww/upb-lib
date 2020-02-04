@@ -82,7 +82,7 @@ class Connection(asyncio.Protocol):
                     self._queued_writes.pop(0)
                     self._process_write_queue()
             elif pim_command == "PB":  # Busy
-                self._start_timer(1.0)
+                self._start_timer(0.25)
             elif pim_command == "PE":  # Error
                 self._cancel_timer()
                 if self._queued_writes:
@@ -107,7 +107,7 @@ class Connection(asyncio.Protocol):
 
         self._queued_writes.append(_Packet(data, pim_cmd, timeout))
         if len(self._queued_writes) > 1:
-            LOG.debug("deferring write %s", data)
+            LOG.debug(f"deferring write {data}")
             return
 
         self._send(data, timeout, pim_cmd)

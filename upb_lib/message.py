@@ -154,19 +154,57 @@ def encode_deactivate_link(network_id, dest_id, ctl=-1):
     )
 
 
-def encode_goto(link, network_id, dest_id, channel, level, rate, ctl=-1):
-    """Goto level, light or link"""
+def _encode_common(cmd, link, network_id, dest_id, channel, level, rate, ctl):
+    """Goto/fade_start, light or link"""
     rate = int(rate)
     if ctl == -1:
         ctl = get_control_word(link)
     args = bytearray([level])
     if not link and channel > 0:
-        args.append(0xff if rate == -1 else rate)
+        args.append(0xFF if rate == -1 else rate)
         args.append(channel)
     elif rate != -1:
         args.append(rate)
 
-    return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.GOTO.value, args)
+    return encode_message(ctl, network_id, dest_id, PIM_ID, cmd, args)
+
+
+def encode_goto(link, network_id, dest_id, channel, level, rate, ctl=-1):
+    """Goto level, light or link"""
+    return _encode_common(
+        UpbCommand.GOTO.value, link, network_id, dest_id, channel, level, rate, ctl
+    )
+
+
+def encode_fade_start(link, network_id, dest_id, channel, level, rate, ctl=-1):
+    """Fade start level, light or link"""
+    return _encode_common(
+        UpbCommand.FADE_START.value,
+        link,
+        network_id,
+        dest_id,
+        channel,
+        level,
+        rate,
+        ctl,
+    )
+
+
+def encode_fade_stop(link, network_id, dest_id, channel, ctl=-1):
+    """Fade stop, light or link."""
+    if ctl == -1:
+        ctl = get_control_word(link)
+    return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.FADE_STOP.value)
+
+
+def encode_blink(link, network_id, dest_id, channel, rate, ctl=-1):
+    """Blink, light or link."""
+    if ctl == -1:
+        ctl = get_control_word(link)
+    args = bytearray([rate])
+    return encode_message(
+        ctl, network_id, dest_id, PIM_ID, UpbCommand.BLINK.value, args
+    )
 
 
 def encode_report_state(network_id, dest_id, ctl=-1):
