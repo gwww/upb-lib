@@ -82,7 +82,7 @@ class Connection(asyncio.Protocol):
                     self._queued_writes.pop(0)
                     self._process_write_queue()
             elif pim_command == "PB":  # Busy
-                self._start_timer(0.25)
+                self._start_timer(0.75)
             elif pim_command == "PE":  # Error
                 self._cancel_timer()
                 if self._queued_writes:
