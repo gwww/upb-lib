@@ -1,17 +1,18 @@
 """Master class that combines all UPB pieces together."""
 
 import asyncio
-from functools import partial
 import logging
+from functools import partial
 from importlib import import_module
+
 import serial_asyncio
 
-from .message import get_control_word, encode_message, MessageDecode
+from .lights import Lights
+from .links import Links
+from .message import MessageDecode, encode_message, get_control_word
 from .parse_upstart import process_upstart_file
 from .proto import Connection
 from .util import parse_url
-from .lights import Lights
-from .links import Links
 
 LOG = logging.getLogger(__name__)
 

@@ -6,10 +6,10 @@ from .const import UpbCommand
 from .elements import Element, Elements
 from .message import (
     encode_blink,
-    encode_report_state,
-    encode_goto,
     encode_fade_start,
     encode_fade_stop,
+    encode_goto,
+    encode_report_state,
 )
 from .util import light_index
 

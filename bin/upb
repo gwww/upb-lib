@@ -3,17 +3,16 @@
 import argparse
 import asyncio
 import io
-import os
 import logging
+import os
 import sys
 import textwrap
 import traceback
 
-from upb_lib import UpbPim
-from upb_lib.message import MessageEncode
-from upb_lib.const import Max
 import cmdr
-
+from upb_lib import UpbPim
+from upb_lib.const import Max
+from upb_lib.message import MessageEncode
 
 LOG = logging.getLogger(__name__)
 

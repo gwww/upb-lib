@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import Mock
 
-from upb_lib.message import get_control_word, encode_message
+import pytest
+
+from upb_lib.message import encode_message, get_control_word
 
 
 def test_get_control_word_all_zeros():

@@ -3,13 +3,13 @@ UPB message encode/decode.
 """
 
 
+import logging
+import re
 from base64 import b16encode
 from collections import namedtuple
 from functools import reduce
-import logging
-import re
 
-from .const import UpbCommand, PIM_ID
+from .const import PIM_ID, UpbCommand
 
 LOG = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ import logging
 
 from .const import PRODUCTS
 from .lights import Light
-from .links import Link, LightLink
+from .links import LightLink, Link
 from .util import light_index, link_index
 
 LOG = logging.getLogger(__name__)

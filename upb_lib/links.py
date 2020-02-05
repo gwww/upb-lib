@@ -1,12 +1,12 @@
 """Definition of an link (scene)"""
+import logging
 from collections import namedtuple
 from enum import Enum
-import logging
 from time import time
 
 from .const import UpbCommand
 from .elements import Element, Elements
-from .message import encode_goto, encode_activate_link, encode_deactivate_link
+from .message import encode_activate_link, encode_deactivate_link, encode_goto
 from .util import link_index
 
 LOG = logging.getLogger(__name__)

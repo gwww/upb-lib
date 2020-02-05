@@ -1,9 +1,9 @@
 """Async IO."""
 
 import asyncio
+import logging
 from collections import namedtuple
 from functools import reduce
-import logging
 
 from .const import PimCommand
 
