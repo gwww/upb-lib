@@ -1,5 +1,5 @@
-""" 
-Parse UPStart file and create UPB light/link objects    
+"""
+Parse UPStart file and create UPB light/link objects
 """
 
 import logging

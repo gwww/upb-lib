@@ -9,7 +9,7 @@ import serial_asyncio
 
 from .lights import Lights
 from .links import Links
-from .message import MessageDecode, encode_message, get_control_word
+from .message import MessageDecode
 from .parse_upstart import process_upstart_file
 from .proto import Connection
 from .util import parse_url

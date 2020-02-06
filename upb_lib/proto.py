@@ -2,8 +2,6 @@
 
 import asyncio
 import logging
-from collections import namedtuple
-from functools import reduce
 
 from .const import PimCommand
 

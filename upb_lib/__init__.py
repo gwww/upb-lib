@@ -1,2 +1,2 @@
 """UPB PIM library"""
-from .upb import UpbPim
+from .upb import UpbPim  # noqa

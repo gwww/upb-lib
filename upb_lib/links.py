@@ -1,7 +1,6 @@
 """Definition of an link (scene)"""
 import logging
 from collections import namedtuple
-from enum import Enum
 from time import time
 
 from .const import UpbCommand
@@ -13,7 +12,6 @@ from .message import (
     encode_fade_start,
     encode_fade_stop,
     encode_goto,
-    encode_report_state,
 )
 from .util import link_index
 

@@ -126,7 +126,6 @@ class Lights(Elements):
             )
 
     def _register_values_report_handler(self, msg):
-        index = light_index(msg.network_id, msg.src_id, 0)
         data = msg.data
         if len(data) != 17:
             LOG.debug("Parse register values only accepts 16 registers")

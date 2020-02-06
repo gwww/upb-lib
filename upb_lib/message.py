@@ -4,8 +4,6 @@ UPB message encode/decode.
 
 
 import logging
-import re
-from base64 import b16encode
 from collections import namedtuple
 from functools import reduce
 
@@ -36,7 +34,7 @@ class MessageDecode:
 
     def decode(self, msg):
         """
-        Decode an UPB message 
+        Decode an UPB message
 
         ASCII Message format: PPCCCCNNDDSSMM...KK
 
