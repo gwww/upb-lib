@@ -17,7 +17,7 @@ build:
 upload.test: build
 	poetry publish --repository test.pypi.org
 
-upload: build
+upload: build install
 	poetry publish
 
 isort:
@@ -27,7 +27,7 @@ lint:
 	pylint --msg-template='{msg_id}({symbol}):{line:3d},{column}: {obj}: {msg}' upb_lib
 
 run:
-	bin/TBD
+	bin/simple
 
 test:
 	pytest

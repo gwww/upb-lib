@@ -65,16 +65,12 @@ class Link(Element):
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
-        self._pim.send(
-            encode_fade_stop(True, self.network_id, self.link_id, 0)
-        )
+        self._pim.send(encode_fade_stop(True, self.network_id, self.link_id, 0))
         # TODO: query status of all lights in this link
 
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
-        self._pim.send(
-            encode_blink(True, self.network_id, self.link_id, 0, rate)
-        )
+        self._pim.send(encode_blink(True, self.network_id, self.link_id, 0, rate))
         self.update_light_levels(UpbCommand.BLINK, 100)
 
     def update_light_levels(self, upb_cmd, level=-1, rate=-1):

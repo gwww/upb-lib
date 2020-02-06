@@ -78,6 +78,7 @@ class Light(Element):
         """(Helper) Get status of a light."""
         self._pim.send(encode_report_state(self.network_id, self.upb_id))
 
+
 class Lights(Elements):
     """Handling for multiple lights"""
 
