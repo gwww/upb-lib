@@ -141,5 +141,5 @@ class Connection(asyncio.Protocol):
 
     def _send(self, data, timeout, pim_command):
         self._start_timer(timeout)
-        LOG.debug("_send '{}' pim_cmd 0x{}".format(data, ord(pim_command)))
-        self._transport.write(("{:s}{}\r".format(pim_command, data)).encode())
+        LOG.debug(f"_send '{data}'")
+        self._transport.write(f"{pim_command}{data}\r".encode())

@@ -6,7 +6,15 @@ from time import time
 
 from .const import UpbCommand
 from .elements import Element, Elements
-from .message import encode_activate_link, encode_deactivate_link, encode_goto
+from .message import (
+    encode_activate_link,
+    encode_blink,
+    encode_deactivate_link,
+    encode_fade_start,
+    encode_fade_stop,
+    encode_goto,
+    encode_report_state,
+)
 from .util import link_index
 
 LOG = logging.getLogger(__name__)
@@ -48,6 +56,27 @@ class Link(Element):
         )
         self.update_light_levels(UpbCommand.GOTO, brightness, rate)
 
+    def fade_start(self, brightness, rate=-1):
+        """(Helper) Start fading a link."""
+        self._pim.send(
+            encode_fade_start(True, self.network_id, self.link_id, 0, brightness, rate)
+        )
+        self.update_light_levels(UpbCommand.FADE_START, brightness, rate)
+
+    def fade_stop(self):
+        """(Helper) Stop fading a link."""
+        self._pim.send(
+            encode_fade_stop(True, self.network_id, self.link_id, 0)
+        )
+        # TODO: query status of all lights in this link
+
+    def blink(self, rate=-1):
+        """(Helper) Blink a link."""
+        self._pim.send(
+            encode_blink(True, self.network_id, self.link_id, 0, rate)
+        )
+        self.update_light_levels(UpbCommand.BLINK, 100)
+
     def update_light_levels(self, upb_cmd, level=-1, rate=-1):
         LOG.debug(f"{upb_cmd.name.capitalize()} {self.name} {self.index}")
         for light_link in self.lights:
@@ -55,7 +84,7 @@ class Link(Element):
             if not light:
                 continue
 
-            if upb_cmd == UpbCommand.GOTO:
+            if upb_cmd == UpbCommand.GOTO or upb_cmd == UpbCommand.FADE_START:
                 set_level = level
             elif upb_cmd == UpbCommand.ACTIVATE:
                 set_level = light_link.dim_level
@@ -70,10 +99,7 @@ class Link(Element):
             changes["level"] = level
         if rate >= 0:
             changes["rate"] = rate
-        if upb_cmd == UpbCommand.GOTO:
-            changes["command"] = "goto"
-        else:
-            changes["command"] = upb_cmd.name.lower()
+        changes["command"] = upb_cmd.name.lower()
         self.setattr("last_change", changes)
 
 

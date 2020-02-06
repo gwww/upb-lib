@@ -32,6 +32,39 @@ Also required is a `UPStart` export file. Mine is in the `bin` directory and nam
 
 This is all under very active development and will change. But if you really want to get up and running... Go for it!
 
+## Configuration
+
+Initialization of the library takes the following parameters:
+
+`url`: This is the PIM to connect to. It is formatted as a URL. Two formats
+are supported: `serial://<device>` where `<device>` is the serial/USB port on which the PIM is connected; `tcp://<IP or domain>[:<port]` where IP or domain is where the device is connected on the network (perhaps using `ser2tcp` or a PIM-U) and an optional `port` number with a default of 2101.
+Note: no testing has been completed on the `tcp://` connection as of yet.
+
+`UPStartExportFile`: the path of where to read the export file generated through File->Export on the UPStart utility. This is optional but recommended.
+
+## Usage
+
+Many of the UPB commands take a `rate`. The values of the rate is as follows (at least for Simply Automated devices):
+
+```
+0 = Snap
+1 = 0.8 seconds
+2 = 1.6 seconds
+3 = 3.3 seconds
+4 = 5.0 seconds
+5 = 6.6 seconds
+6 = 10 seconds
+7 = 20 seconds
+8 = 30 seconds
+9 = 1 minute
+10 = 2 minutes
+11 = 5 minutes
+12 = 10 minutes
+13 = 15 minutes
+14 = 30 minutes
+15 = 1 hour
+```
+
 ## Development
 
 This project uses [poetry](https://poetry.eustace.io/) for development dependencies. Installation instructions are on their website.
