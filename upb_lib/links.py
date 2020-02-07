@@ -18,7 +18,7 @@ from .util import link_index
 LOG = logging.getLogger(__name__)
 
 
-LightLink = namedtuple("LightLink", "light_id, dim_level")
+LightLink = namedtuple("LightLink", "light_id, light_level")
 
 
 class Link(Element):
@@ -81,12 +81,12 @@ class Link(Element):
             if upb_cmd == UpbCommand.GOTO or upb_cmd == UpbCommand.FADE_START:
                 set_level = level
             elif upb_cmd == UpbCommand.ACTIVATE:
-                set_level = light_link.dim_level
+                set_level = light_link.light_level
             else:
                 set_level = 0
 
             light.setattr("status", set_level)
-            LOG.debug(f"  Updating '{light.name}' to dim level {set_level}")
+            LOG.debug(f"  Updating '{light.name}' to light level {set_level}")
 
         changes = {"timestamp": time()}
         if level >= 0:
