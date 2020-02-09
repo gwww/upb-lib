@@ -35,7 +35,7 @@ def parse_flags(flags):
         elif len(flag) == 2:
             try:
                 flag[1] = int(flag[1])
-            except:
+            except ValueError:
                 pass
             return_value[flag[0]] = flag[1]
     return return_value
