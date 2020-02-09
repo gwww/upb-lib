@@ -4,9 +4,12 @@ import re
 
 
 # Array for converting seconds to a rate (aka transition) length
-SECS_TO_RATE = [
-    0, 0.8, 1.6, 3.3, 5, 6.6, 10, 20, 30, 60, 120, 600, 1800, 3600,
-]
+SECS_TO_RATE = [0, 0.8, 1.6, 3.3, 5, 6.6, 10, 20, 30, 60, 120, 600, 1800, 3600]
+
+
+def seconds_to_rate(seconds):
+    return min(range(len(SECS_TO_RATE)), key=lambda i: abs(SECS_TO_RATE[i] - seconds))
+
 
 def parse_url(url):
     """Parse a PIM connection string """
@@ -46,7 +49,3 @@ def light_index(network, light_id, channel):
 def link_index(network, link_id):
     """Format a link ID"""
     return f"{network}_{link_id}"
-
-
-def seconds_to_rate(seconds):
-    return min(range(len(SECS_TO_RATE)), key=lambda i: abs(SECS_TO_RATE[i]-seconds))
