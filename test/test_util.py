@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from upb_lib.util import parse_url
+from upb_lib.util import parse_flags, parse_url
 
 
 def test_parse_url_valid_tcp():
@@ -22,3 +22,29 @@ def test_parse_url_valid_serial():
 def test_parse_url_unknown_scheme():
     with pytest.raises(ValueError):
         parse_url("bad_scheme://rest")
+
+
+def test_parse_flags_one_simple_flag():
+    flags = parse_flags("foo")
+    assert flags["foo"] == True
+
+
+def test_parse_flags_two_simple_flags():
+    flags = parse_flags("foo, yaa")
+    assert flags == {"foo": True, "yaa": True}
+
+
+def test_parse_flags_one_assigned_flag():
+    flags = parse_flags("the_answer = 42")
+    assert flags == {"the_answer": 42}
+
+
+def test_parse_flags_two_assigned_flags():
+    flags = parse_flags("the_answer = 42, to_the_universe=food")
+    assert flags == {"the_answer": 42, "to_the_universe": "food"}
+
+
+def test_parse_flags_complex_flags():
+    flags = parse_flags("nonono, the_answer=42, yesyesyes, the_universe=food")
+    assert flags == {"nonono": True, "yesyesyes": True, "the_answer": 42,
+                     "the_universe": "food"}

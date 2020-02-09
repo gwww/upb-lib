@@ -12,7 +12,7 @@ from .links import Links
 from .message import MessageDecode
 from .parse_upstart import process_upstart_file
 from .proto import Connection
-from .util import parse_url
+from .util import parse_flags, parse_url
 
 LOG = logging.getLogger(__name__)
 
@@ -31,8 +31,11 @@ class UpbPim:
         self._message_decode = MessageDecode()
         self._sync_handlers = []
         self._heartbeat = None
+        self.flags = {}
         self.lights = Lights(self)
         self.links = Links(self)
+
+        self.flags = parse_flags(config.get("flags", ""))
 
         # Setup for all the types of elements tracked
         export_filepath = config.get("UPStartExportFile")

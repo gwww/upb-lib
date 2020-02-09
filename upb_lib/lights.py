@@ -69,6 +69,8 @@ class Light(Element):
 
     def blink(self, rate=-1):
         """(Helper) Blink a light."""
+        if rate < 30 and not self._pim.flags.get("unlimited_blink_rate"):
+            rate = 30
         self._pim.send(
             encode_blink(False, self.network_id, self.upb_id, self.channel, rate)
         )

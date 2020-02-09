@@ -24,13 +24,10 @@ serial port.
 
 ## Overview
 
-Details TBD
-  
-Simplest thing right now is when in the root of the git repo that you have cloned is to enter the command `bin/simple`. You need the environment variable `UPBPIM_URL` set. Mine is set to `serial:///dev/cu.KeySerial1` on a MacBook. What is constant is `serial://` followed by the USB port that the PIM is on, which in my case is `/dev/cu.KeySerial1`. On Windows is might be something like `COM1`.
+Simplest thing right now is when in the root of the git repo that you have cloned is to enter the command `bin/simple`. This program requires that the environment variable `UPBPIM_URL` set to indicate how to connect to the PIM. For example, `serial:///dev/cu.KeySerial1` connects to the PIM on a serial port (`serial://`) `/dev/cu/KeySerial1`. On Windows something like `serial://COM1` might work.
 
-Also required is a `UPStart` export file. Mine is in the `bin` directory and named `upb.upe`. The `simple` program looks for it there.
-
-This is all under very active development and will change. But if you really want to get up and running... Go for it!
+Also required is a `UPStart` export file. The `bin/simple` program looks for it
+in the same directory as where the program is (i.e.: `bin`) and assumes that it is named `upb.upe`.
 
 ## Configuration
 
@@ -41,6 +38,14 @@ are supported: `serial://<device>` where `<device>` is the serial/USB port on wh
 Note: no testing has been completed on the `tcp://` connection as of yet.
 
 `UPStartExportFile`: the path of where to read the export file generated through File->Export on the UPStart utility. This is optional but recommended.
+
+`flags`: A string that contains a set of comma separated flags. Each flag can take the form of <flag_name> or <flag_name>=<value>. Parse is simple with no escapes so values cannot contain commas or equals. Flags supported are:
+
+- `unlimited_blink_rate`: By default the minimum value that can be pass to blink a light or link is 30 (which is about 1/2 a second). When this flag is specified the minimum is 1.
+
+## First use of the API
+
+Read the code in `bin/simple`. That is the short use of the API around. Beyond that look at the file `lights.py` and `links.py`. Any method in those files that has a description that starts with `(Helper)` are generally UPB actions.
 
 ## Usage
 
