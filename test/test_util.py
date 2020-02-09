@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from upb_lib.util import parse_flags, parse_url
+from upb_lib.util import parse_flags, parse_url, seconds_to_rate
 
 
 def test_parse_url_valid_tcp():
@@ -48,3 +48,12 @@ def test_parse_flags_complex_flags():
     flags = parse_flags("nonono, the_answer=42, yesyesyes, the_universe=food")
     assert flags == {"nonono": True, "yesyesyes": True, "the_answer": 42,
                      "the_universe": "food"}
+
+
+def test_seconds_to_rate():
+    assert seconds_to_rate(30) == 8
+    assert seconds_to_rate(1.0) == 1
+    assert seconds_to_rate(1.21) == 2
+    assert seconds_to_rate(45) == 8
+    assert seconds_to_rate(45.1) == 9
+

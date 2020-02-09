@@ -11,7 +11,7 @@ from .message import (
     encode_goto,
     encode_report_state,
 )
-from .util import light_index
+from .util import light_index, seconds_to_rate
 
 LOG = logging.getLogger(__name__)
 
@@ -31,6 +31,9 @@ class Light(Element):
         self.dimmable = None
 
     def _level(self, brightness, rate):
+        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
+            rate = seconds_to_rate(rate)
+
         if rate > 255:
             rate = 255
 

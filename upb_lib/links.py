@@ -13,7 +13,7 @@ from .message import (
     encode_fade_stop,
     encode_goto,
 )
-from .util import link_index
+from .util import link_index, seconds_to_rate
 
 LOG = logging.getLogger(__name__)
 
@@ -49,17 +49,25 @@ class Link(Element):
         if brightness > 100:
             brightness = 100
 
+        saved_rate = rate
+        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
+            rate = seconds_to_rate(rate)
+
         self._pim.send(
             encode_goto(True, self.network_id, self.link_id, 0, brightness, rate)
         )
-        self.update_light_levels(UpbCommand.GOTO, brightness, rate)
+        self.update_light_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a link."""
+        saved_rate = rate
+        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
+            rate = seconds_to_rate(rate)
+
         self._pim.send(
             encode_fade_start(True, self.network_id, self.link_id, 0, brightness, rate)
         )
-        self.update_light_levels(UpbCommand.FADE_START, brightness, rate)
+        self.update_light_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
@@ -120,6 +128,9 @@ class Links(Elements):
         if not link:
             LOG.warning(f"UPB command received for unknown link: {index}")
             return
+
+        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
+            rate = seconds_to_rate(rate)
 
         link.update_light_levels(upb_cmd, level, rate)
 
