@@ -98,8 +98,8 @@ class UpbPim:
 
         self.call_sync_handlers()
 
-        if not self._config["url"].startswith("serial://"):
-            self._heartbeat = self.loop.call_later(120, self._reset_connection)
+        # if not self._config["url"].startswith("serial://"):
+        #     self._heartbeat = self.loop.call_later(120, self._reset_connection)
 
     def _reset_connection(self):
         LOG.warning("PIM connection heartbeat timed out, disconnecting")

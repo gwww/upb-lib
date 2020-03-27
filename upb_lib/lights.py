@@ -21,7 +21,7 @@ class Light(Element):
 
     def __init__(self, index, pim):
         super().__init__(index, pim)
-        self.status = 0
+        self.status = None
         self.version = None
         self.product = None
         self.kind = None
