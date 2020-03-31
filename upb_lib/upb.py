@@ -69,7 +69,7 @@ class UpbPim:
             else:
                 await asyncio.wait_for(
                     self.loop.create_connection(conn, host=dest, port=param, ssl=None),
-                    timeout=30,
+                    timeout=5,
                 )
         except (ValueError, OSError, asyncio.TimeoutError) as err:
             LOG.warning(
@@ -94,7 +94,7 @@ class UpbPim:
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
         # return an error, but hopefully resets the PIM
-        self.send("")
+        self.send("", response_required=False, raw=True)
 
         self.call_sync_handlers()
 
@@ -119,20 +119,29 @@ class UpbPim:
 
     def _got_data(self, data):  # pylint: disable=no-self-use
         try:
-            self._message_decode.decode(data)
+            if data == "~~PAUSE":
+                LOG.info("PAUSE connection")
+                self.pause()
+            elif data == "~~RESUME":
+                LOG.info("RESUME connection")
+                self.resume()
+                self.call_sync_handlers()
+            else:
+                self._message_decode.decode(data)
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
 
     def _timeout(self, msg_code):
+        LOG.warning(f"Timeout communicating with UPB device {msg_code}")
         pass
 
     def add_sync_handler(self, sync_handler):
-        """Register a fn that synchronizes part of the panel."""
+        """Register a fn that synchronizes elements."""
         self._sync_handlers.append(sync_handler)
 
     def call_sync_handlers(self):
         """Invoke the synchronization handlers."""
-        LOG.debug("Synchronizing panel...")
+        LOG.debug("Synchronizing status of UPB network...")
         for sync_handler in self._sync_handlers:
             sync_handler()
 
@@ -148,10 +157,10 @@ class UpbPim:
         """Enter the asyncio loop."""
         self.loop.run_forever()
 
-    def send(self, msg):
+    def send(self, msg, response_required=True, raw=False):
         """Send a message to UPB PIM."""
         if self._conn:
-            self._conn.write_data(msg)
+            self._conn.write_data(msg, response_required, raw=raw)
 
     def pause(self):
         """Pause the connection from sending/receiving."""

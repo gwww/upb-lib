@@ -20,8 +20,6 @@ class MessageDecode:
     def __init__(self):
         """Initialize a new Message instance."""
         self._handlers = {}
-        self._last_message = bytearray()
-        self._last_sequence = 0
 
     def add_handler(self, message_type, handler):
         """Manage callbacks for message handlers."""
@@ -46,17 +44,10 @@ class MessageDecode:
         MM - UPB Message type
         ... - contents of UPB message, vary by type
         KK - checksum
-
-        Minimum length is 14 bytes (all the bytes except the '...' bit)
         """
-        if len(msg) < 14:
-            raise ValueError("UPB message less than 14 characters")
-
-        # Convert message to binary, stripping checksum as PIM checks it
-        msg = bytearray.fromhex(msg[:-2])
-        if self._repeated_message(msg):
-            LOG.debug("Repeated message!!!")
-            return
+        # PIM command and checksum already stripped off of msg at this point
+        if len(msg) < 6:
+            raise ValueError("UPB message less than 12 characters")
 
         control = int.from_bytes(msg[0:2], byteorder="big")
         self.link = (control & 0x8000) != 0
@@ -83,25 +74,6 @@ class MessageDecode:
         #           self.transmit_count, self.transmit_sequence )
         # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
         #           self.dest_id, self.src_id, self.msg_id)
-
-    def _repeated_message(self, msg):
-        current_message = msg.copy()
-        current_sequence = current_message[1] & 0b00000011
-
-        if current_sequence <= self._last_sequence:
-            self._last_sequence = current_sequence
-            self._last_message = current_message
-            return False
-
-        self._last_sequence = current_sequence
-
-        # Clear sequence field
-        current_message[1] = current_message[1] & 0b11111100
-        if current_message == self._last_message:
-            return True
-
-        self._last_message = current_message
-        return False
 
 
 def get_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
