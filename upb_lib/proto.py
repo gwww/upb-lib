@@ -8,6 +8,20 @@ from .const import PimCommand
 LOG = logging.getLogger(__name__)
 
 
+class _Packet:
+    """Details about a packet being sent"""
+
+    def __init__(self, data, response, timeout, raw):
+        self.data = data
+        self.response = response
+        self.raw = raw
+        self.timeout = timeout
+        self.retry_count = 1
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 class Connection(asyncio.Protocol):
     """asyncio Protocol with line parsing and queuing writes"""
 
@@ -18,6 +32,7 @@ class Connection(asyncio.Protocol):
         self._disconnected_callback = disconnected
         self._got_data_callback = got_data
         self._timeout_callback = timeout
+        self.write_count = 0
 
         self._last_message = bytearray()
         self._last_sequence = 0
@@ -51,12 +66,6 @@ class Connection(asyncio.Protocol):
         if self._disconnected_callback:
             self._disconnected_callback()
 
-    def _cleanup(self):
-        self._cancel_timer()
-        self._waiting_for_response = None
-        self._queued_writes = []
-        self._buffer = ""
-
     def stop(self):
         """Stop the connection from sending/receiving/reconnecting."""
         self._transport = None
@@ -71,6 +80,16 @@ class Connection(asyncio.Protocol):
     def resume(self):
         """Restart the connection from sending/receiving."""
         self._paused = False
+
+    def write_data(self, data, response_required=True, timeout=5.0, raw=False):
+        response = data[4:8] if response_required else None
+        self._write_data(_Packet(data, response, timeout, raw))
+
+    def _cleanup(self):
+        self._cancel_timer()
+        self._waiting_for_response = None
+        self._queued_writes = []
+        self._buffer = ""
 
     def _response_required_timeout(self):
         LOG.debug(f"_response_required_timeout")
@@ -151,32 +170,35 @@ class Connection(asyncio.Protocol):
 
     def _process_write_queue(self):
         while self._queued_writes and not self._waiting_for_response:
-            to_write = self._queued_writes.pop(0)
-            # to_write = self._queued_writes[0]
-            self.write_data(to_write[0], to_write[1], timeout=to_write[2])
+            pkt = self._queued_writes.pop(0)
+            self._write_data(pkt)
 
-    def write_data(self, data, response_required=True, timeout=5.0, raw=False):
+    def _write_data(self, pkt):
         """Write data on the asyncio Protocol"""
-        if self._transport is None:
-            return
-
-        if self._paused:
+        if self._transport is None or self._paused:
             return
 
         if self._waiting_for_response:
-            self._queued_writes.append((data, response_required, timeout))
-            LOG.debug("queued write %s", data)
+            self._queued_writes.append(pkt)
+            LOG.debug("queued write %s", pkt.data)
             return
 
-        if response_required:
-            self._queued_writes.insert(0, (data, response_required, timeout))
-            self._waiting_for_response = data[4:8]
-            if timeout > 0:
-                self._start_timer(timeout, self._response_required_timeout)
+        if pkt.response:
+            self._queued_writes.insert(0, pkt)
+            self._waiting_for_response = pkt.response
+            if pkt.timeout > 0:
+                self._start_timer(pkt.timeout, self._response_required_timeout)
 
-        LOG.debug(f"write_data '{data}'")
-        if raw:
-            self._transport.write(f"{data}\r".encode())
+        self.write_count = self.write_count + 1
+        if self.write_count % 5 == 0:
+            LOG.debug("sleepy!!!")
+            import time
+
+            time.sleep(6)
+
+        LOG.debug(f"write_data '{pkt.data}'")
+        if pkt.raw:
+            self._transport.write(f"{pkt.data}\r".encode())
         else:
             pim_command = PimCommand.TX_UPB_MSG.value
-            self._transport.write(f"{pim_command}{data}\r".encode())
+            self._transport.write(f"{pim_command}{pkt.data}\r".encode())
