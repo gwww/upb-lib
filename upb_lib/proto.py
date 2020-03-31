@@ -32,13 +32,13 @@ class Connection(asyncio.Protocol):
         self._disconnected_callback = disconnected
         self._got_data_callback = got_data
         self._timeout_callback = timeout
-        self.write_count = 0
+        # self.write_count = 0
 
         self._last_message = bytearray()
         self._last_sequence = 0
 
         self._transport = None
-        self._waiting_for_response = None
+        self._waiting_for_response = False
         self._timeout_task = None
         self._queued_writes = []
         self._buffer = ""
@@ -85,29 +85,18 @@ class Connection(asyncio.Protocol):
         response = data[4:8] if response_required else None
         self._write_data(_Packet(data, response, timeout, raw))
 
-    def _cleanup(self):
-        self._cancel_timer()
-        self._waiting_for_response = None
-        self._queued_writes = []
-        self._buffer = ""
-
     def _response_required_timeout(self):
         LOG.debug(f"_response_required_timeout")
-        self._timeout_callback(self._waiting_for_response)
+        if not self._queued_writes:
+            LOG.debug(f"No writes are queued and there should be.")
+            return
+
+        pkt = self._queued_writes.pop(0)
+        self._timeout_callback(pkt.response)
         self._timeout_task = None
-        self._waiting_for_response = None
-        self._queued_writes.pop(0)
+        self._waiting_for_response = False
 
         self._process_write_queue()
-
-    def _cancel_timer(self):
-        if self._timeout_task:
-            self._timeout_task.cancel()
-            self._timeout_task = None
-
-    def _start_timer(self, timeout, callback):
-        self._cancel_timer()
-        self._timeout_task = self.loop.call_later(timeout, callback)
 
     def _is_repeated_message(self, msg):
         current_message = msg.copy()
@@ -135,11 +124,15 @@ class Connection(asyncio.Protocol):
             return
 
         if self._waiting_for_response:
-            response = f"{line[6:8]}{line[10:12]}"
-            if response == self._waiting_for_response:
-                self._waiting_for_response = None
+            if self._queued_writes:
+                response = f"{line[6:8]}{line[10:12]}"
+                if response == self._queued_writes[0].response:
+                    self._waiting_for_response = False
+                    self._cancel_timer()
+                    self._queued_writes.pop(0)
+            else:
+                self._waiting_for_response = False
                 self._cancel_timer()
-                self._queued_writes.pop(0)
 
         self._got_data_callback(msg)
 
@@ -163,7 +156,7 @@ class Connection(asyncio.Protocol):
 
         if pim_busy:
             LOG.debug(f"PIM busy received, retrying in 0.25 seconds")
-            self._waiting_for_response = None
+            self._waiting_for_response = False
             self._start_timer(0.25, self._process_write_queue)
         else:
             self._process_write_queue()
@@ -185,16 +178,15 @@ class Connection(asyncio.Protocol):
 
         if pkt.response:
             self._queued_writes.insert(0, pkt)
-            self._waiting_for_response = pkt.response
+            self._waiting_for_response = True
             if pkt.timeout > 0:
                 self._start_timer(pkt.timeout, self._response_required_timeout)
 
-        self.write_count = self.write_count + 1
-        if self.write_count % 5 == 0:
-            LOG.debug("sleepy!!!")
-            import time
-
-            time.sleep(6)
+        # self.write_count = self.write_count + 1
+        # if self.write_count % 5 == 0:
+        #     LOG.debug("sleepy!!!")
+        #     import time
+        #     time.sleep(6)
 
         LOG.debug(f"write_data '{pkt.data}'")
         if pkt.raw:
@@ -202,3 +194,18 @@ class Connection(asyncio.Protocol):
         else:
             pim_command = PimCommand.TX_UPB_MSG.value
             self._transport.write(f"{pim_command}{pkt.data}\r".encode())
+
+    def _start_timer(self, timeout, callback):
+        self._cancel_timer()
+        self._timeout_task = self.loop.call_later(timeout, callback)
+
+    def _cancel_timer(self):
+        if self._timeout_task:
+            self._timeout_task.cancel()
+            self._timeout_task = None
+
+    def _cleanup(self):
+        self._cancel_timer()
+        self._waiting_for_response = False
+        self._queued_writes = []
+        self._buffer = ""
