@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from .const import PimCommand
+from .const import PimCommand, PROTO_RETRY_COUNT, PIM_BUSY_TIMEOUT
 
 LOG = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class _Packet:
         self.response = response
         self.raw = raw
         self.timeout = timeout
-        self.retry_count = 1
+        self.retry_count = PROTO_RETRY_COUNT
 
     def __repr__(self):
         return str(self.__dict__)
@@ -86,13 +86,21 @@ class Connection(asyncio.Protocol):
         self._write_data(_Packet(data, response, timeout, raw))
 
     def _response_required_timeout(self):
-        LOG.debug(f"_response_required_timeout")
         if not self._queued_writes:
-            LOG.debug(f"No writes are queued and there should be.")
+            LOG.debug(f"_response_required_timeout: No writes are queued.")
             return
 
-        pkt = self._queued_writes.pop(0)
-        self._timeout_callback(pkt.response)
+        pkt = self._queued_writes[0]
+
+        LOG.debug(
+            f"Timeout waiting for response, retrying {pkt.retry_count} more times."
+        )
+
+        if pkt.retry_count == 0:
+            self._queued_writes.pop(0)
+            self._timeout_callback(pkt.response)
+
+        pkt.retry_count -= 1
         self._timeout_task = None
         self._waiting_for_response = False
 
@@ -155,9 +163,9 @@ class Connection(asyncio.Protocol):
             #     pass
 
         if pim_busy:
-            LOG.debug(f"PIM busy received, retrying in 0.25 seconds")
+            LOG.debug(f"PIM busy received, retrying in {PIM_BUSY_TIMEOUT} seconds")
             self._waiting_for_response = False
-            self._start_timer(0.25, self._process_write_queue)
+            self._start_timer(PIM_BUSY_TIMEOUT, self._process_write_queue)
         else:
             self._process_write_queue()
 
