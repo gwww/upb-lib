@@ -87,7 +87,7 @@ class Connection(asyncio.Protocol):
 
     def _response_required_timeout(self):
         if not self._queued_writes:
-            LOG.debug(f"_response_required_timeout: No writes are queued.")
+            LOG.warning(f"_response_required_timeout: No writes are queued.")
             return
 
         pkt = self._queued_writes[0]
