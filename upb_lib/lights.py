@@ -40,7 +40,8 @@ class Light(Element):
         self._pim.send(
             encode_goto(
                 False, self.network_id, self.upb_id, self.channel, brightness, rate
-            )
+            ),
+            False,
         )
         self.setattr("status", brightness)
 
@@ -59,14 +60,15 @@ class Light(Element):
         self._pim.send(
             encode_fade_start(
                 False, self.network_id, self.upb_id, self.channel, brightness, rate
-            )
+            ),
+            False,
         )
         self.setattr("status", brightness)
 
     def fade_stop(self):
         """(Helper) Stop fading a light."""
         self._pim.send(
-            encode_fade_stop(False, self.network_id, self.upb_id, self.channel)
+            encode_fade_stop(False, self.network_id, self.upb_id, self.channel), False
         )
         self._pim.send(encode_report_state(self.network_id, self.upb_id))
 
@@ -75,7 +77,7 @@ class Light(Element):
         if rate < 30 and not self._pim.flags.get("unlimited_blink_rate"):
             rate = 30
         self._pim.send(
-            encode_blink(False, self.network_id, self.upb_id, self.channel, rate)
+            encode_blink(False, self.network_id, self.upb_id, self.channel, rate), False
         )
         self.setattr("status", 100)
 

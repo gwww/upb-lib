@@ -36,12 +36,12 @@ class Link(Element):
 
     def activate(self):
         """(Helper) Activate link"""
-        self._pim.send(encode_activate_link(self.network_id, self.link_id))
+        self._pim.send(encode_activate_link(self.network_id, self.link_id), False)
         self.update_light_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
-        self._pim.send(encode_deactivate_link(self.network_id, self.link_id))
+        self._pim.send(encode_deactivate_link(self.network_id, self.link_id), False)
         self.update_light_levels(UpbCommand.DEACTIVATE)
 
     def goto(self, brightness, rate=-1):
@@ -54,7 +54,7 @@ class Link(Element):
             rate = seconds_to_rate(rate)
 
         self._pim.send(
-            encode_goto(True, self.network_id, self.link_id, 0, brightness, rate)
+            encode_goto(True, self.network_id, self.link_id, 0, brightness, rate), False
         )
         self.update_light_levels(UpbCommand.GOTO, brightness, saved_rate)
 
@@ -65,13 +65,14 @@ class Link(Element):
             rate = seconds_to_rate(rate)
 
         self._pim.send(
-            encode_fade_start(True, self.network_id, self.link_id, 0, brightness, rate)
+            encode_fade_start(True, self.network_id, self.link_id, 0, brightness, rate),
+            False,
         )
         self.update_light_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
-        self._pim.send(encode_fade_stop(True, self.network_id, self.link_id, 0))
+        self._pim.send(encode_fade_stop(True, self.network_id, self.link_id, 0), False)
         for light_link in self.lights:
             light = self._pim.lights.elements.get(light_link.light_id)
             if light:
@@ -79,7 +80,9 @@ class Link(Element):
 
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
-        self._pim.send(encode_blink(True, self.network_id, self.link_id, 0, rate))
+        self._pim.send(
+            encode_blink(True, self.network_id, self.link_id, 0, rate), False
+        )
         self.update_light_levels(UpbCommand.BLINK, 100)
 
     def update_light_levels(self, upb_cmd, level=-1, rate=-1):

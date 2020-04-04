@@ -32,7 +32,6 @@ class Connection(asyncio.Protocol):
         self._disconnected_callback = disconnected
         self._got_data_callback = got_data
         self._timeout_callback = timeout
-        # self.write_count = 0
 
         self._last_message = bytearray()
         self._last_sequence = 0
@@ -82,8 +81,12 @@ class Connection(asyncio.Protocol):
         self._paused = False
 
     def write_data(self, data, response_required=True, timeout=5.0, raw=False):
+        """Queue data and process the write queue."""
         response = data[4:8] if response_required else None
-        self._write_data(_Packet(data, response, timeout, raw))
+        pkt = _Packet(data, response, timeout, raw)
+        self._queued_writes.append(pkt)
+        LOG.debug("queued write %s", pkt.data)
+        self._process_write_queue()
 
     def _response_required_timeout(self):
         if not self._queued_writes:
@@ -170,47 +173,28 @@ class Connection(asyncio.Protocol):
             self._process_write_queue()
 
     def _process_write_queue(self):
-        while self._queued_writes and not self._waiting_for_response:
-            pkt = self._queued_writes.pop(0)
-            self._write_data(pkt)
-
-    def _write_data(self, pkt):
-        """Write data on the asyncio Protocol"""
         if self._transport is None or self._paused:
             return
-
-        if self._waiting_for_response:
-            self._queued_writes.append(pkt)
-            LOG.debug("queued write %s", pkt.data)
-            return
-
-        if pkt.response:
-            self._queued_writes.insert(0, pkt)
-            self._waiting_for_response = True
-            if pkt.timeout > 0:
+        while self._queued_writes and not self._waiting_for_response:
+            pkt = self._queued_writes[0]
+            if pkt.response:
+                self._waiting_for_response = True
                 self._start_timer(pkt.timeout, self._response_required_timeout)
+            else:
+                self._queued_writes.pop(0)
 
-        # self.write_count = self.write_count + 1
-        # if self.write_count % 5 == 0:
-        #     LOG.debug("sleepy!!!")
-        #     import time
-        #     time.sleep(6)
-
-        LOG.debug(f"write_data '{pkt.data}'")
-        if pkt.raw:
-            self._transport.write(f"{pkt.data}\r".encode())
-        else:
-            pim_command = PimCommand.TX_UPB_MSG.value
+            LOG.debug(f"write_data {pkt.data}")
+            pim_command = "" if pkt.raw else PimCommand.TX_UPB_MSG.value
             self._transport.write(f"{pim_command}{pkt.data}\r".encode())
-
-    def _start_timer(self, timeout, callback):
-        self._cancel_timer()
-        self._timeout_task = self.loop.call_later(timeout, callback)
 
     def _cancel_timer(self):
         if self._timeout_task:
             self._timeout_task.cancel()
             self._timeout_task = None
+
+    def _start_timer(self, timeout, callback):
+        self._cancel_timer()
+        self._timeout_task = self.loop.call_later(timeout, callback)
 
     def _cleanup(self):
         self._cancel_timer()

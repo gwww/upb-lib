@@ -76,7 +76,7 @@ class MessageDecode:
         #           self.dest_id, self.src_id, self.msg_id)
 
 
-def get_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
+def create_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
     control = (1 if link else 0) << 15
     control = control | (repeater << 13)
     control = control | (ack << 4)
@@ -105,9 +105,7 @@ def encode_message(control, network_id, dest_id, src_id, msg_code, data=""):
 
 
 def _ctl(ctl, link=False):
-    if ctl == -1:
-        return get_control_word(link)
-    return ctl
+    return create_control_word(link) if ctl == -1 else ctl
 
 
 def encode_activate_link(network_id, dest_id, ctl=-1):
@@ -128,7 +126,7 @@ def _encode_common(cmd, link, network_id, dest_id, channel, level, rate, ctl):
     """Goto/fade_start, light or link"""
     rate = int(rate)
     if ctl == -1:
-        ctl = get_control_word(link)
+        ctl = create_control_word(link)
     args = bytearray([level])
     if not link and channel > 0:
         args.append(0xFF if rate == -1 else rate)
@@ -163,14 +161,14 @@ def encode_fade_start(link, network_id, dest_id, channel, level, rate, ctl=-1):
 def encode_fade_stop(link, network_id, dest_id, channel, ctl=-1):
     """Fade stop, light or link."""
     if ctl == -1:
-        ctl = get_control_word(link)
+        ctl = create_control_word(link)
     return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.FADE_STOP.value)
 
 
 def encode_blink(link, network_id, dest_id, channel, rate, ctl=-1):
     """Blink, light or link."""
     if ctl == -1:
-        ctl = get_control_word(link)
+        ctl = create_control_word(link)
     args = bytearray([rate])
     return encode_message(
         ctl, network_id, dest_id, PIM_ID, UpbCommand.BLINK.value, args

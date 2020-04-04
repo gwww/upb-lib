@@ -98,9 +98,6 @@ class UpbPim:
 
         self.call_sync_handlers()
 
-        # if not self._config["url"].startswith("serial://"):
-        #     self._heartbeat = self.loop.call_later(120, self._reset_connection)
-
     def _reset_connection(self):
         LOG.warning("PIM connection heartbeat timed out, disconnecting")
         self._transport.close()
@@ -119,13 +116,18 @@ class UpbPim:
 
     def _got_data(self, data):  # pylint: disable=no-self-use
         try:
-            if data == "~~PAUSE":
-                LOG.info("PAUSE connection")
-                self.pause()
-            elif data == "~~RESUME":
-                LOG.info("RESUME connection")
-                self.resume()
-                self.call_sync_handlers()
+            if data[:2] == "~~":
+                if data == "~~PAUSE":
+                    LOG.info("PAUSE connection")
+                    self.pause()
+                elif data == "~~RESUME":
+                    LOG.info("RESUME connection")
+                    self.resume()
+                    self.call_sync_handlers()
+                elif data == "~~HEARTBEAT":
+                    if self._heartbeat:
+                        self._heartbeat.cancel()
+                    self._heartbeat = self.loop.call_later(90, self._reset_connection)
             else:
                 self._message_decode.decode(data)
         except (ValueError, AttributeError) as err:
