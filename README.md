@@ -35,14 +35,13 @@ Initialization of the library takes the following parameters:
 
 `url`: This is the PIM to connect to. It is formatted as a URL. Two formats
 are supported: `serial://<device>` where `<device>` is the serial/USB port on which the PIM is connected; `tcp://<IP or domain>[:<port]` where IP or domain is where the device is connected on the network (perhaps using `ser2tcp` or a PIM-U) and an optional `port` number with a default of 2101.
-Note: no testing has been completed on the `tcp://` connection as of yet.
 
-`UPStartExportFile`: the path of where to read the export file generated through File->Export on the UPStart utility. This is optional but recommended.
+`UPStartExportFile`: the path of where to read the export file generated through File->Export on the UpStart utility. This is optional but recommended.
 
 `flags`: A string that contains a set of comma separated flags. Each flag can take the form of <flag_name> or <flag_name>=<value>. Parse is simple with no escapes so values cannot contain commas or equals. Flags supported are:
 
 - `unlimited_blink_rate`: By default the minimum value that can be pass to blink a light or link is 30 (which is about 1/2 a second). When this flag is specified the minimum is 1.
-- `use_raw_rate`: By default the API takes the number of seconds as the rate in which to transition lights to their new level. The number of seconds is coverted to the closest rate value that UPB understands (see rate table below). For example, if a request is to transition a light to its new state in 8 seconds, the closest value that UPB supports is 10 seconds and that is the transition time that will be used. If the use raw rate flag is given on initializing this library then the rate value is assumed to be the UPB rate value. i.e.: not in seconds but is a value that UPB "understands".
+- `use_raw_rate`: By default the API takes the number of seconds as the rate in which to transition lights to their new level. The number of seconds is coverted to the closest rate value that UPB understands (see rate table below). For example, if a request is to transition a light to its new state in 8 seconds, the closest value that UPB supports is 6.6 seconds and that is the transition time that will be used. If the use raw rate flag is given on initializing this library then the rate value is assumed to be the UPB rate value. i.e.: not in seconds but is a value that UPB "understands".
 
 ## First use of the API
 
