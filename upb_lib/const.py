@@ -4,7 +4,6 @@ Constants used across package
 
 from enum import Enum
 
-PIM_ID = 0xFF
 PIM_BUSY_TIMEOUT = 0.25
 PROTO_RETRY_COUNT = 1
 

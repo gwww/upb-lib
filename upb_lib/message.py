@@ -7,9 +7,10 @@ import logging
 from collections import namedtuple
 from functools import reduce
 
-from .const import PIM_ID, UpbCommand
+from .const import UpbCommand
 
 LOG = logging.getLogger(__name__)
+PIM_ID = 0xFF
 
 MessageEncode = namedtuple("MessageEncode", ["message", "response_command"])
 
