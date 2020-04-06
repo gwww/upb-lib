@@ -27,7 +27,7 @@ def main():
 
         pim = UpbPim({"url": url, "UPStartExportFile": "bin/upb.upe"})
         pim.connect()
-        pim.loop.call_later(30, _dump_lights)
+        pim.loop.call_later(60, _dump_lights)
         pim.run()
     except KeyboardInterrupt:
         exit(0)
