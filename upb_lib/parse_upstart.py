@@ -52,7 +52,7 @@ def _process_file(pim, file):
 
                 light.network_id = network_id
                 light.upb_id = upb_id
-                light.channel = 0
+                light.channel = channel + 1
                 light.name = "{} {}".format(fields[11], fields[12])
                 light.version = "{}.{}".format(fields[5], fields[6])
 

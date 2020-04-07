@@ -129,7 +129,7 @@ def _encode_common(cmd, link, network_id, dest_id, channel, level, rate, ctl):
     if ctl == -1:
         ctl = create_control_word(link)
     args = bytearray([level])
-    if not link and channel > 0:
+    if not link and channel > 1:
         args.append(0xFF if rate == -1 else rate)
         args.append(channel)
     elif rate != -1:
