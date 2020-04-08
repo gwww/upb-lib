@@ -102,6 +102,8 @@ class Lights(Elements):
     def sync(self):
         for light_id in self.elements:
             light = self.elements[light_id]
+            if light.channel > 1:
+                continue
             self.pim.send(encode_report_state(light.network_id, light.upb_id))
 
     def _device_state_report_handler(self, msg):
