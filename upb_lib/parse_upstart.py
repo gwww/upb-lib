@@ -54,10 +54,13 @@ def _process_file(pim, file):
                 light.network_id = network_id
                 light.upb_id = upb_id
                 light.channel = channel + multi_channel
-                light.name = "{} {}".format(fields[11], fields[12])
-                light.version = "{}.{}".format(fields[5], fields[6])
+                if multi_channel:
+                    light.name = f"{fields[11]} {fields[12]} {channel}"
+                else:
+                    light.name = f"{fields[11]} {fields[12]}"
+                light.version = f"{fields[5]}.{fields[6]}"
 
-                product = "{}/{}".format(fields[3], fields[4])
+                product = f"{fields[3]}/{fields[4]}"
                 if product in PRODUCTS:
                     light.product = PRODUCTS[product][0]
                     light.kind = PRODUCTS[product][1]
@@ -83,3 +86,9 @@ def _process_file(pim, file):
             light_idx = light_index(network_id, fields[3], fields[1])
             dim_level = int(fields[5])
             pim.links[link_idx].add_light(LightLink(light_idx, dim_level))
+
+        # Rename definition - not part of UPE file spec
+        elif fields[0] == "99":
+            light = pim.lights.elements.get(fields[1])
+            if light:
+                light.name = fields[2]
