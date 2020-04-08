@@ -46,13 +46,14 @@ def _process_file(pim, file):
             upb_id = int(fields[1])
             network_id = int(fields[2])
             number_of_channels = int(fields[8])
+            multi_channel = 1 if number_of_channels > 1 else 0
             for channel in range(0, number_of_channels):
                 index = light_index(network_id, upb_id, channel)
                 light = Light(index, pim)
 
                 light.network_id = network_id
                 light.upb_id = upb_id
-                light.channel = channel + 1
+                light.channel = channel + multi_channel
                 light.name = "{} {}".format(fields[11], fields[12])
                 light.version = "{}.{}".format(fields[5], fields[6])
 
