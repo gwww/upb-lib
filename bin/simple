@@ -9,10 +9,10 @@ LOG = logging.getLogger(__name__)
 
 
 def main():
-    def _dump_lights():
-        for light_id in pim.lights:
-            light = pim.lights[light_id]
-            LOG.debug(f"{light_id} {light.name} {light.status}")
+    def _dump_devices():
+        for device_id in pim.devices:
+            device = pim.devices[device_id]
+            LOG.debug(f"{device_id} {device.name} {device.status}")
 
     logging.basicConfig(
         format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
@@ -27,7 +27,7 @@ def main():
 
         pim = UpbPim({"url": url, "UPStartExportFile": "bin/upb.upe"})
         pim.connect()
-        pim.loop.call_later(60, _dump_lights)
+        pim.loop.call_later(60, _dump_devices)
         pim.run()
     except KeyboardInterrupt:
         exit(0)
