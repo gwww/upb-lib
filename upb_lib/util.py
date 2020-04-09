@@ -39,13 +39,3 @@ def parse_flags(flags):
                 pass
             return_value[flag[0]] = flag[1]
     return return_value
-
-
-def light_index(network, light_id, channel):
-    """Format a light ID"""
-    return f"{network}_{light_id}_{channel}"
-
-
-def link_index(network, link_id):
-    """Format a link ID"""
-    return f"{network}_{link_id}"
