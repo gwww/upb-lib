@@ -78,20 +78,21 @@ class MessageDecode:
 
 
 def create_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
-    control = (1 if link else 0) << 15
-    control = control | (repeater << 13)
-    control = control | (ack << 4)
-    control = control | (tx_cnt << 2)
-    control = control | tx_seq
-    return control
+    ctl = (1 if link else 0) << 15
+    ctl = ctl | (repeater << 13)
+    ctl = ctl | (ack << 4)
+    ctl = ctl | (tx_cnt << 2)
+    ctl = ctl | tx_seq
+    return ctl
 
 
-def encode_message(control, addr, src_id, msg_code, data=""):
+def encode_message(ctl, addr, src_id, msg_code, data=""):
     """Encode a message for the PIM, assumes data formatted"""
+    ctl = create_control_word(addr.is_link) if ctl == -1 else ctl
     length = 7 + len(data)
-    control = control | (length << 8)
+    ctl = ctl | (length << 8)
     msg = bytearray(length)
-    msg[0:2] = control.to_bytes(2, byteorder="big")
+    msg[0:2] = ctl.to_bytes(2, byteorder="big")
     msg[2] = addr.network_id
     msg[3] = addr.upb_id
     msg[4] = src_id
@@ -105,25 +106,19 @@ def encode_message(control, addr, src_id, msg_code, data=""):
     return msg.hex().upper()
 
 
-def _ctl(ctl, link=False):
-    return create_control_word(link) if ctl == -1 else ctl
-
-
 def encode_activate_link(addr, ctl=-1):
     """Activate link"""
-    return encode_message(_ctl(ctl, True), addr, PIM_ID, UpbCommand.ACTIVATE.value)
+    return encode_message(ctl, addr, PIM_ID, UpbCommand.ACTIVATE.value)
 
 
 def encode_deactivate_link(addr, ctl=-1):
     """Activate link"""
-    return encode_message(_ctl(ctl, True), addr, PIM_ID, UpbCommand.DEACTIVATE.value)
+    return encode_message(ctl, addr, PIM_ID, UpbCommand.DEACTIVATE.value)
 
 
-def _encode_common(cmd, addr, level, rate, ctl):
+def _encode_common(ctl, addr, cmd, level, rate):
     """Goto/fade_start, light or link"""
     rate = int(rate)
-    if ctl == -1:
-        ctl = create_control_word(addr.is_link)
     args = bytearray([level])
     if not addr.is_link and addr.channel > 0:
         args.append(0xFF if rate == -1 else rate)
@@ -136,28 +131,24 @@ def _encode_common(cmd, addr, level, rate, ctl):
 
 def encode_goto(addr, level, rate, ctl=-1):
     """Goto level, light or link"""
-    return _encode_common(UpbCommand.GOTO.value, addr, level, rate, ctl)
+    return _encode_common(ctl, addr, UpbCommand.GOTO.value, level, rate)
 
 
 def encode_fade_start(addr, level, rate, ctl=-1):
     """Fade start level, light or link"""
-    return _encode_common(UpbCommand.FADE_START.value, addr, level, rate, ctl)
+    return _encode_common(ctl, addr, UpbCommand.FADE_START.value, level, rate)
 
 
 def encode_fade_stop(addr, ctl=-1):
     """Fade stop, light or link."""
-    if ctl == -1:
-        ctl = create_control_word(addr.is_link)
     return encode_message(ctl, addr, PIM_ID, UpbCommand.FADE_STOP.value)
 
 
 def encode_blink(addr, rate, ctl=-1):
     """Blink, light or link."""
-    if ctl == -1:
-        ctl = create_control_word(addr.is_link)
     args = bytearray([rate])
     return encode_message(ctl, addr, PIM_ID, UpbCommand.BLINK.value, args)
 
 
 def encode_report_state(addr, ctl=-1):
-    return encode_message(_ctl(ctl), addr, PIM_ID, UpbCommand.REPORT_STATE.value)
+    return encode_message(ctl, addr, PIM_ID, UpbCommand.REPORT_STATE.value)
