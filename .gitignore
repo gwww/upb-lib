@@ -3,6 +3,7 @@
 .\#*
 *~
 
+local
 bin/upb.upe
 
 # Byte-compiled / optimized / DLL files
