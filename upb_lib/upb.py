@@ -7,7 +7,7 @@ from importlib import import_module
 
 import serial_asyncio
 
-from .lights import UpbDevices
+from .devices import UpbDevices
 from .links import Links
 from .message import MessageDecode
 from .parse_upstart import process_upstart_file

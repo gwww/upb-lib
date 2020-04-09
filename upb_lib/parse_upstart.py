@@ -5,7 +5,7 @@ Parse UPStart file and create UPB device/link objects
 import logging
 
 from .const import PRODUCTS
-from .lights import UpbDevice, UpbAddr
+from .devices import UpbDevice, UpbAddr
 from .links import DeviceLink, Link, LinkAddr
 
 LOG = logging.getLogger(__name__)
