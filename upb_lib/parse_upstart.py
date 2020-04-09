@@ -5,7 +5,7 @@ Parse UPStart file and create UPB light/link objects
 import logging
 
 from .const import PRODUCTS
-from .lights import Light, UPBAddr
+from .lights import Light, UpbAddr
 from .links import LightLink, Link, LinkAddr
 
 LOG = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def _device_definition_record(pim, network_id, fields):
     number_of_channels = int(fields[8])
     multi_channel = number_of_channels > 1
     for channel in range(0, number_of_channels):
-        light = Light(UPBAddr(network_id, upb_id, channel, multi_channel), pim)
+        light = Light(UpbAddr(network_id, upb_id, channel, multi_channel), pim)
         if multi_channel:
             light.name = f"{fields[11]} {fields[12]} {channel}"
         else:
@@ -69,7 +69,7 @@ def _device_definition_record(pim, network_id, fields):
 
 
 def _channel_definition_record(pim, network_id, fields):
-    light_id = UPBAddr(network_id, fields[2], fields[1]).index
+    light_id = UpbAddr(network_id, fields[2], fields[1]).index
     light = pim.lights.elements.get(light_id)
     if light:
         light.dimmable = fields[3] == "1"
@@ -81,7 +81,7 @@ def _link_device_definition_record(pim, network_id, fields):
         return
 
     link_idx = LinkAddr(network_id, link_id).index
-    light_idx = UPBAddr(network_id, fields[3], fields[1]).index
+    light_idx = UpbAddr(network_id, fields[3], fields[1]).index
     dim_level = int(fields[5])
     pim.links[link_idx].add_light(LightLink(light_idx, dim_level))
 

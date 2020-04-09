@@ -16,7 +16,7 @@ from .util import seconds_to_rate
 LOG = logging.getLogger(__name__)
 
 
-class UPBAddr(Addr):
+class UpbAddr(Addr):
     def __init__(self, network_id, upb_id, channel, multi_channel=False):
         super().__init__(network_id, upb_id)
         self._channel = channel
@@ -112,7 +112,7 @@ class Lights(Elements):
             if i >= status_length:
                 break
 
-            index = UPBAddr(msg.network_id, msg.src_id, i).index
+            index = UpbAddr(msg.network_id, msg.src_id, i).index
             light = self.pim.lights.elements.get(index)
             if not light:
                 break
@@ -125,7 +125,7 @@ class Lights(Elements):
         if msg.link:
             return
         channel = msg.data[2] if len(msg.data) > 2 else 0
-        index = UPBAddr(msg.network_id, msg.dest_id, channel).index
+        index = UpbAddr(msg.network_id, msg.dest_id, channel).index
         light = self.pim.lights.elements.get(index)
         if light:
             level = msg.data[0]
