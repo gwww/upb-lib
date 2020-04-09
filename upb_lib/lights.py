@@ -3,7 +3,7 @@
 import logging
 
 from .const import UpbCommand
-from .elements import Element, Elements
+from .elements import Addr, Element, Elements
 from .message import (
     encode_blink,
     encode_fade_start,
@@ -16,18 +16,36 @@ from .util import light_index, seconds_to_rate
 LOG = logging.getLogger(__name__)
 
 
+class UPBAddr(Addr):
+    def __init__(self, network_id, upb_id, channel, multi_channel=False):
+        super().__init__(network_id, upb_id)
+        self._channel = channel
+        self._multi_channel = multi_channel
+        self._index = f"{self.network_id}_{self.upb_id}_{self.channel}"
+
+    @property
+    def channel(self):
+        return self._channel
+
+    @property
+    def multi_channel(self):
+        return self._multi_channel
+
+
 class Light(Element):
     """Class representing a Light"""
 
-    def __init__(self, index, pim):
-        super().__init__(index, pim)
+    def __init__(self, addr, pim):
+        super().__init__(addr.index, pim)
+        self._addr = addr
+        self.network_id = addr.network_id
+        self.upb_id = addr.upb_id
+        self.channel = addr.channel
+
         self.status = None
         self.version = None
         self.product = None
         self.kind = None
-        self.network_id = None
-        self.upb_id = None
-        self.channel = None
         self.dimmable = None
 
     def _level(self, brightness, rate):
@@ -37,12 +55,7 @@ class Light(Element):
         if rate > 255:
             rate = 255
 
-        self._pim.send(
-            encode_goto(
-                False, self.network_id, self.upb_id, self.channel, brightness, rate
-            ),
-            False,
-        )
+        self._pim.send(encode_goto(self._addr, brightness, rate), False)
         self.setattr("status", brightness)
 
     def turn_on(self, brightness=100, rate=-1):
@@ -57,33 +70,24 @@ class Light(Element):
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a light."""
-        self._pim.send(
-            encode_fade_start(
-                False, self.network_id, self.upb_id, self.channel, brightness, rate
-            ),
-            False,
-        )
+        self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
         self.setattr("status", brightness)
 
     def fade_stop(self):
         """(Helper) Stop fading a light."""
-        self._pim.send(
-            encode_fade_stop(False, self.network_id, self.upb_id, self.channel), False
-        )
-        self._pim.send(encode_report_state(self.network_id, self.upb_id))
+        self._pim.send(encode_fade_stop(self._addr), False)
+        self._pim.send(encode_report_state(self._addr))
 
     def blink(self, rate=-1):
         """(Helper) Blink a light."""
         if rate < 30 and not self._pim.flags.get("unlimited_blink_rate"):
             rate = 30
-        self._pim.send(
-            encode_blink(False, self.network_id, self.upb_id, self.channel, rate), False
-        )
+        self._pim.send(encode_blink(self._addr, rate), False)
         self.setattr("status", 100)
 
     def update_status(self):
         """(Helper) Get status of a light."""
-        self._pim.send(encode_report_state(self.network_id, self.upb_id))
+        self._pim.send(encode_report_state(self._addr))
 
 
 class Lights(Elements):
@@ -102,9 +106,9 @@ class Lights(Elements):
     def sync(self):
         for light_id in self.elements:
             light = self.elements[light_id]
-            if light.channel > 1:
+            if light.channel > 0:
                 continue
-            self.pim.send(encode_report_state(light.network_id, light.upb_id))
+            self.pim.send(encode_report_state(light._addr))
 
     def _device_state_report_handler(self, msg):
         status_length = len(msg.data)

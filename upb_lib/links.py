@@ -4,7 +4,7 @@ from collections import namedtuple
 from time import time
 
 from .const import UpbCommand
-from .elements import Element, Elements
+from .elements import Addr, Element, Elements
 from .message import (
     encode_activate_link,
     encode_blink,
@@ -21,14 +21,21 @@ LOG = logging.getLogger(__name__)
 LightLink = namedtuple("LightLink", "light_id, light_level")
 
 
-class Link(Element):
-    """Class representing a Light"""
+class LinkAddr(Addr):
+    def __init__(self, network_id, upb_id):
+        super().__init__(network_id, upb_id, True)
+        self._index = f"{self.network_id}_{self.upb_id}"
 
-    def __init__(self, index, pim):
-        super().__init__(index, pim)
+
+class Link(Element):
+    """Class representing a UPB Link."""
+
+    def __init__(self, addr, pim):
+        super().__init__(addr.index, pim)
         self.lights = []
-        self.network_id = None
-        self.link_id = None
+        self._addr = addr
+        self.network_id = addr.network_id
+        self.link_id = addr.upb_id
         self.last_change = None
 
     def add_light(self, light_link):
@@ -36,12 +43,12 @@ class Link(Element):
 
     def activate(self):
         """(Helper) Activate link"""
-        self._pim.send(encode_activate_link(self.network_id, self.link_id), False)
+        self._pim.send(encode_activate_link(self._addr), False)
         self.update_light_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
-        self._pim.send(encode_deactivate_link(self.network_id, self.link_id), False)
+        self._pim.send(encode_deactivate_link(self._addr), False)
         self.update_light_levels(UpbCommand.DEACTIVATE)
 
     def goto(self, brightness, rate=-1):
@@ -53,9 +60,7 @@ class Link(Element):
         if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
             rate = seconds_to_rate(rate)
 
-        self._pim.send(
-            encode_goto(True, self.network_id, self.link_id, 0, brightness, rate), False
-        )
+        self._pim.send(encode_goto(self._addr, brightness, rate), False)
         self.update_light_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
@@ -64,15 +69,12 @@ class Link(Element):
         if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
             rate = seconds_to_rate(rate)
 
-        self._pim.send(
-            encode_fade_start(True, self.network_id, self.link_id, 0, brightness, rate),
-            False,
-        )
+        self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
         self.update_light_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
-        self._pim.send(encode_fade_stop(True, self.network_id, self.link_id, 0), False)
+        self._pim.send(encode_fade_stop(self._addr), False)
         for light_link in self.lights:
             light = self._pim.lights.elements.get(light_link.light_id)
             if light:
@@ -80,9 +82,7 @@ class Link(Element):
 
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
-        self._pim.send(
-            encode_blink(True, self.network_id, self.link_id, 0, rate), False
-        )
+        self._pim.send(encode_blink(self._addr, rate), False)
         self.update_light_levels(UpbCommand.BLINK, 100)
 
     def update_light_levels(self, upb_cmd, level=-1, rate=-1):

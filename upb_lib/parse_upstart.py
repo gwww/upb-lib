@@ -5,9 +5,8 @@ Parse UPStart file and create UPB light/link objects
 import logging
 
 from .const import PRODUCTS
-from .lights import Light
-from .links import LightLink, Link
-from .util import light_index, link_index
+from .lights import Light, UPBAddr
+from .links import LightLink, Link, LinkAddr
 
 LOG = logging.getLogger(__name__)
 
@@ -32,12 +31,8 @@ def _process_file(pim, file):
         # Link definition record
         elif fields[0] == "2":
             link_id = int(fields[1])
-            index = link_index(network_id, link_id)
-            link = Link(index, pim)
-
+            link = Link(LinkAddr(network_id, link_id), pim)
             link.name = fields[2]
-            link.network_id = network_id
-            link.link_id = link_id
             pim.links.add_element(link)
 
         # Light record
@@ -46,14 +41,9 @@ def _process_file(pim, file):
             upb_id = int(fields[1])
             network_id = int(fields[2])
             number_of_channels = int(fields[8])
-            multi_channel = 1 if number_of_channels > 1 else 0
+            multi_channel = number_of_channels > 1
             for channel in range(0, number_of_channels):
-                index = light_index(network_id, upb_id, channel)
-                light = Light(index, pim)
-
-                light.network_id = network_id
-                light.upb_id = upb_id
-                light.channel = channel + multi_channel
+                light = Light(UPBAddr(network_id, upb_id, channel, multi_channel), pim)
                 if multi_channel:
                     light.name = f"{fields[11]} {fields[12]} {channel}"
                 else:
@@ -72,7 +62,7 @@ def _process_file(pim, file):
 
         # Channel info record, only care about dimmable flag
         elif fields[0] == "8":
-            light_id = light_index(network_id, fields[2], fields[1])
+            light_id = UPBAddr(network_id, fields[2], fields[1]).index
             light = pim.lights.elements[light_id]
             light.dimmable = True if fields[3] == "1" else False
 
@@ -82,8 +72,8 @@ def _process_file(pim, file):
             if link_id == 255:
                 continue
 
-            link_idx = link_index(network_id, link_id)
-            light_idx = light_index(network_id, fields[3], fields[1])
+            link_idx = LinkAddr(network_id, link_id).index
+            light_idx = UPBAddr(network_id, fields[3], fields[1]).index
             dim_level = int(fields[5])
             pim.links[link_idx].add_light(LightLink(light_idx, dim_level))
 

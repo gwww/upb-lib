@@ -86,14 +86,14 @@ def create_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
     return control
 
 
-def encode_message(control, network_id, dest_id, src_id, msg_code, data=""):
+def encode_message(control, addr, src_id, msg_code, data=""):
     """Encode a message for the PIM, assumes data formatted"""
     length = 7 + len(data)
     control = control | (length << 8)
     msg = bytearray(length)
     msg[0:2] = control.to_bytes(2, byteorder="big")
-    msg[2] = network_id
-    msg[3] = dest_id
+    msg[2] = addr.network_id
+    msg[3] = addr.upb_id
     msg[4] = src_id
     msg[5] = msg_code
     if data:
@@ -109,74 +109,55 @@ def _ctl(ctl, link=False):
     return create_control_word(link) if ctl == -1 else ctl
 
 
-def encode_activate_link(network_id, dest_id, ctl=-1):
+def encode_activate_link(addr, ctl=-1):
     """Activate link"""
-    return encode_message(
-        _ctl(ctl, True), network_id, dest_id, PIM_ID, UpbCommand.ACTIVATE.value
-    )
+    return encode_message(_ctl(ctl, True), addr, PIM_ID, UpbCommand.ACTIVATE.value)
 
 
-def encode_deactivate_link(network_id, dest_id, ctl=-1):
+def encode_deactivate_link(addr, ctl=-1):
     """Activate link"""
-    return encode_message(
-        _ctl(ctl, True), network_id, dest_id, PIM_ID, UpbCommand.DEACTIVATE.value
-    )
+    return encode_message(_ctl(ctl, True), addr, PIM_ID, UpbCommand.DEACTIVATE.value)
 
 
-def _encode_common(cmd, link, network_id, dest_id, channel, level, rate, ctl):
+def _encode_common(cmd, addr, level, rate, ctl):
     """Goto/fade_start, light or link"""
     rate = int(rate)
     if ctl == -1:
-        ctl = create_control_word(link)
+        ctl = create_control_word(addr.is_link)
     args = bytearray([level])
-    if not link and channel > 0:
+    if not addr.is_link and addr.channel > 0:
         args.append(0xFF if rate == -1 else rate)
-        args.append(channel)
+        args.append(addr.channel + 1)
     elif rate != -1:
         args.append(rate)
 
-    return encode_message(ctl, network_id, dest_id, PIM_ID, cmd, args)
+    return encode_message(ctl, addr, PIM_ID, cmd, args)
 
 
-def encode_goto(link, network_id, dest_id, channel, level, rate, ctl=-1):
+def encode_goto(addr, level, rate, ctl=-1):
     """Goto level, light or link"""
-    return _encode_common(
-        UpbCommand.GOTO.value, link, network_id, dest_id, channel, level, rate, ctl
-    )
+    return _encode_common(UpbCommand.GOTO.value, addr, level, rate, ctl)
 
 
-def encode_fade_start(link, network_id, dest_id, channel, level, rate, ctl=-1):
+def encode_fade_start(addr, level, rate, ctl=-1):
     """Fade start level, light or link"""
-    return _encode_common(
-        UpbCommand.FADE_START.value,
-        link,
-        network_id,
-        dest_id,
-        channel,
-        level,
-        rate,
-        ctl,
-    )
+    return _encode_common(UpbCommand.FADE_START.value, addr, level, rate, ctl)
 
 
-def encode_fade_stop(link, network_id, dest_id, channel, ctl=-1):
+def encode_fade_stop(addr, ctl=-1):
     """Fade stop, light or link."""
     if ctl == -1:
-        ctl = create_control_word(link)
-    return encode_message(ctl, network_id, dest_id, PIM_ID, UpbCommand.FADE_STOP.value)
+        ctl = create_control_word(addr.is_link)
+    return encode_message(ctl, addr, PIM_ID, UpbCommand.FADE_STOP.value)
 
 
-def encode_blink(link, network_id, dest_id, channel, rate, ctl=-1):
+def encode_blink(addr, rate, ctl=-1):
     """Blink, light or link."""
     if ctl == -1:
-        ctl = create_control_word(link)
+        ctl = create_control_word(addr.is_link)
     args = bytearray([rate])
-    return encode_message(
-        ctl, network_id, dest_id, PIM_ID, UpbCommand.BLINK.value, args
-    )
+    return encode_message(ctl, addr, PIM_ID, UpbCommand.BLINK.value, args)
 
 
-def encode_report_state(network_id, dest_id, ctl=-1):
-    return encode_message(
-        _ctl(ctl), network_id, dest_id, PIM_ID, UpbCommand.REPORT_STATE.value
-    )
+def encode_report_state(addr, ctl=-1):
+    return encode_message(_ctl(ctl), addr, PIM_ID, UpbCommand.REPORT_STATE.value)

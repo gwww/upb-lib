@@ -3,6 +3,31 @@
 """
 
 
+class Addr:
+    """Base representation of an address for UPB devices and links."""
+
+    def __init__(self, network_id, upb_id, is_link=False):
+        self._network_id = network_id
+        self._upb_id = upb_id
+        self._is_link = is_link
+
+    @property
+    def network_id(self):
+        return self._network_id
+
+    @property
+    def upb_id(self):
+        return self._upb_id
+
+    @property
+    def is_link(self):
+        return self._is_link
+
+    @property
+    def index(self):
+        return self._index
+
+
 class Element:
     """Element class"""
 
