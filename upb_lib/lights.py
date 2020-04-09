@@ -11,7 +11,7 @@ from .message import (
     encode_goto,
     encode_report_state,
 )
-from .util import light_index, seconds_to_rate
+from .util import seconds_to_rate
 
 LOG = logging.getLogger(__name__)
 
@@ -38,10 +38,6 @@ class Light(Element):
     def __init__(self, addr, pim):
         super().__init__(addr.index, pim)
         self._addr = addr
-        self.network_id = addr.network_id
-        self.upb_id = addr.upb_id
-        self.channel = addr.channel
-
         self.status = None
         self.version = None
         self.product = None
@@ -106,7 +102,7 @@ class Lights(Elements):
     def sync(self):
         for light_id in self.elements:
             light = self.elements[light_id]
-            if light.channel > 0:
+            if light._addr.channel > 0:
                 continue
             self.pim.send(encode_report_state(light._addr))
 
@@ -116,7 +112,7 @@ class Lights(Elements):
             if i >= status_length:
                 break
 
-            index = light_index(msg.network_id, msg.src_id, i)
+            index = UPBAddr(msg.network_id, msg.src_id, i).index
             light = self.pim.lights.elements.get(index)
             if not light:
                 break
@@ -129,7 +125,7 @@ class Lights(Elements):
         if msg.link:
             return
         channel = msg.data[2] if len(msg.data) > 2 else 0
-        index = light_index(msg.network_id, msg.dest_id, channel)
+        index = UPBAddr(msg.network_id, msg.dest_id, channel).index
         light = self.pim.lights.elements.get(index)
         if light:
             level = msg.data[0]

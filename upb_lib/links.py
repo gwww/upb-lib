@@ -13,7 +13,7 @@ from .message import (
     encode_fade_stop,
     encode_goto,
 )
-from .util import link_index, seconds_to_rate
+from .util import seconds_to_rate
 
 LOG = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ class Links(Elements):
     def _activate_deactivate(self, msg, upb_cmd, level=-1, rate=-1):
         if not msg.link:
             return
-        index = link_index(msg.network_id, msg.dest_id)
+        index = LinkAddr(msg.network_id, msg.dest_id).index
         link = self.elements.get(index)
         if not link:
             LOG.warning(f"UPB command received for unknown link: {index}")
