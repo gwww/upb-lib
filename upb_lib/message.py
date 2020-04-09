@@ -117,7 +117,7 @@ def encode_deactivate_link(addr, ctl=-1):
 
 
 def _encode_common(ctl, addr, cmd, level, rate):
-    """Goto/fade_start, light or link"""
+    """Goto/fade_start, device or link"""
     rate = int(rate)
     args = bytearray([level])
     if not addr.is_link and addr.channel > 0:
@@ -130,22 +130,22 @@ def _encode_common(ctl, addr, cmd, level, rate):
 
 
 def encode_goto(addr, level, rate, ctl=-1):
-    """Goto level, light or link"""
+    """Goto level, device or link"""
     return _encode_common(ctl, addr, UpbCommand.GOTO.value, level, rate)
 
 
 def encode_fade_start(addr, level, rate, ctl=-1):
-    """Fade start level, light or link"""
+    """Fade start level, device or link"""
     return _encode_common(ctl, addr, UpbCommand.FADE_START.value, level, rate)
 
 
 def encode_fade_stop(addr, ctl=-1):
-    """Fade stop, light or link."""
+    """Fade stop, device or link."""
     return encode_message(ctl, addr, PIM_ID, UpbCommand.FADE_STOP.value)
 
 
 def encode_blink(addr, rate, ctl=-1):
-    """Blink, light or link."""
+    """Blink, device or link."""
     args = bytearray([rate])
     return encode_message(ctl, addr, PIM_ID, UpbCommand.BLINK.value, args)
 

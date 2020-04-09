@@ -18,7 +18,7 @@ from .util import seconds_to_rate
 LOG = logging.getLogger(__name__)
 
 
-LightLink = namedtuple("LightLink", "light_id, light_level")
+DeviceLink = namedtuple("DeviceLink", "device_id, device_level")
 
 
 class LinkAddr(Addr):
@@ -32,24 +32,24 @@ class Link(Element):
 
     def __init__(self, addr, pim):
         super().__init__(addr.index, pim)
-        self.lights = []
+        self.devices = []
         self._addr = addr
         self.network_id = addr.network_id
         self.link_id = addr.upb_id
         self.last_change = None
 
-    def add_light(self, light_link):
-        self.lights.append(light_link)
+    def add_device(self, device_link):
+        self.devices.append(device_link)
 
     def activate(self):
         """(Helper) Activate link"""
         self._pim.send(encode_activate_link(self._addr), False)
-        self.update_light_levels(UpbCommand.ACTIVATE)
+        self.update_device_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
         self._pim.send(encode_deactivate_link(self._addr), False)
-        self.update_light_levels(UpbCommand.DEACTIVATE)
+        self.update_device_levels(UpbCommand.DEACTIVATE)
 
     def goto(self, brightness, rate=-1):
         """(Helper) Goto level"""
@@ -61,7 +61,7 @@ class Link(Element):
             rate = seconds_to_rate(rate)
 
         self._pim.send(encode_goto(self._addr, brightness, rate), False)
-        self.update_light_levels(UpbCommand.GOTO, brightness, saved_rate)
+        self.update_device_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a link."""
@@ -70,37 +70,37 @@ class Link(Element):
             rate = seconds_to_rate(rate)
 
         self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
-        self.update_light_levels(UpbCommand.FADE_START, brightness, saved_rate)
+        self.update_device_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
         self._pim.send(encode_fade_stop(self._addr), False)
-        for light_link in self.lights:
-            light = self._pim.lights.elements.get(light_link.light_id)
-            if light:
-                light.update_status()
+        for device_link in self.devices:
+            device = self._pim.devices.elements.get(device_link.device_id)
+            if device:
+                device.update_status()
 
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
         self._pim.send(encode_blink(self._addr, rate), False)
-        self.update_light_levels(UpbCommand.BLINK, 100)
+        self.update_device_levels(UpbCommand.BLINK, 100)
 
-    def update_light_levels(self, upb_cmd, level=-1, rate=-1):
+    def update_device_levels(self, upb_cmd, level=-1, rate=-1):
         LOG.debug(f"{upb_cmd.name.capitalize()} {self.name} {self.index}")
-        for light_link in self.lights:
-            light = self._pim.lights.elements.get(light_link.light_id)
-            if not light:
+        for device_link in self.devices:
+            device = self._pim.devices.elements.get(device_link.device_id)
+            if not device:
                 continue
 
             if upb_cmd == UpbCommand.GOTO or upb_cmd == UpbCommand.FADE_START:
                 set_level = level
             elif upb_cmd == UpbCommand.ACTIVATE:
-                set_level = light_link.light_level
+                set_level = device_link.device_level
             else:
                 set_level = 0
 
-            light.setattr("status", set_level)
-            LOG.debug(f"  Updating '{light.name}' to light level {set_level}")
+            device.setattr("status", set_level)
+            LOG.debug(f"  Updating '{device.name}' to level {set_level}")
 
         changes = {"timestamp": time()}
         if level >= 0:
@@ -112,7 +112,7 @@ class Link(Element):
 
 
 class Links(Elements):
-    """Handling for multiple lights"""
+    """Handling for multiple links."""
 
     def __init__(self, pim):
         super().__init__(pim)
@@ -135,7 +135,7 @@ class Links(Elements):
         if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
             rate = seconds_to_rate(rate)
 
-        link.update_light_levels(upb_cmd, level, rate)
+        link.update_device_levels(upb_cmd, level, rate)
 
     def _activate_handler(self, msg):
         self._activate_deactivate(msg, UpbCommand.ACTIVATE)

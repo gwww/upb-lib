@@ -7,7 +7,7 @@ from importlib import import_module
 
 import serial_asyncio
 
-from .lights import Lights
+from .lights import UpbDevices
 from .links import Links
 from .message import MessageDecode
 from .parse_upstart import process_upstart_file
@@ -32,7 +32,7 @@ class UpbPim:
         self._sync_handlers = []
         self._heartbeat = None
         self.flags = {}
-        self.lights = Lights(self)
+        self.devices = UpbDevices(self)
         self.links = Links(self)
 
         self.flags = parse_flags(config.get("flags", ""))

@@ -1,4 +1,4 @@
-"""Definition of an UPB Light"""
+"""Definition of UPB devices."""
 
 import logging
 
@@ -32,8 +32,8 @@ class UpbAddr(Addr):
         return self._multi_channel
 
 
-class Light(Element):
-    """Class representing a Light"""
+class UpbDevice(Element):
+    """Class representing a UPB device."""
 
     def __init__(self, addr, pim):
         super().__init__(addr.index, pim)
@@ -55,39 +55,39 @@ class Light(Element):
         self.setattr("status", brightness)
 
     def turn_on(self, brightness=100, rate=-1):
-        """(Helper) Set light to specified level"""
+        """(Helper) Set device to specified level"""
         if not self.dimmable or brightness > 100:
             brightness = 100
         self._level(brightness, rate)
 
     def turn_off(self, rate=-1):
-        """(Helper) Turn light off."""
+        """(Helper) Turn device off."""
         self._level(0, rate)
 
     def fade_start(self, brightness, rate=-1):
-        """(Helper) Start fading a light."""
+        """(Helper) Start fading a device."""
         self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
         self.setattr("status", brightness)
 
     def fade_stop(self):
-        """(Helper) Stop fading a light."""
+        """(Helper) Stop fading a device."""
         self._pim.send(encode_fade_stop(self._addr), False)
         self._pim.send(encode_report_state(self._addr))
 
     def blink(self, rate=-1):
-        """(Helper) Blink a light."""
+        """(Helper) Blink a device."""
         if rate < 30 and not self._pim.flags.get("unlimited_blink_rate"):
             rate = 30
         self._pim.send(encode_blink(self._addr, rate), False)
         self.setattr("status", 100)
 
     def update_status(self):
-        """(Helper) Get status of a light."""
+        """(Helper) Get status of a device."""
         self._pim.send(encode_report_state(self._addr))
 
 
-class Lights(Elements):
-    """Handling for multiple lights"""
+class UpbDevices(Elements):
+    """Handling for multiple devices."""
 
     def __init__(self, pim):
         super().__init__(pim)
@@ -100,11 +100,11 @@ class Lights(Elements):
         pim.add_handler(UpbCommand.GOTO, self._goto_handler)
 
     def sync(self):
-        for light_id in self.elements:
-            light = self.elements[light_id]
-            if light._addr.channel > 0:
+        for device_id in self.elements:
+            device = self.elements[device_id]
+            if device._addr.channel > 0:
                 continue
-            self.pim.send(encode_report_state(light._addr))
+            self.pim.send(encode_report_state(device._addr))
 
     def _device_state_report_handler(self, msg):
         status_length = len(msg.data)
@@ -113,25 +113,25 @@ class Lights(Elements):
                 break
 
             index = UpbAddr(msg.network_id, msg.src_id, i).index
-            light = self.pim.lights.elements.get(index)
-            if not light:
+            device = self.pim.devices.elements.get(index)
+            if not device:
                 break
 
             level = msg.data[i]
-            light.setattr("status", level)
-            LOG.debug("(DSR) Light %s level is %d", light.name, light.status)
+            device.setattr("status", level)
+            LOG.debug("(DSR) Device %s level is %d", device.name, device.status)
 
     def _goto_handler(self, msg):
         if msg.link:
             return
         channel = msg.data[2] if len(msg.data) > 2 else 0
         index = UpbAddr(msg.network_id, msg.dest_id, channel).index
-        light = self.pim.lights.elements.get(index)
-        if light:
+        device = self.pim.devices.elements.get(index)
+        if device:
             level = msg.data[0]
-            light.setattr("status", level)
+            device.setattr("status", level)
             LOG.debug(
-                f"(GOTO) Light {light.name}/{light.index} level is {light.status}"
+                f"(GOTO) Device {device.name}/{device.index} level is {device.status}"
             )
 
     def _register_values_report_handler(self, msg):
