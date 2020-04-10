@@ -90,7 +90,10 @@ class UpbPim:
         # return an error, but hopefully resets the PIM
         self.send("", response_required=False, raw=True)
 
-        self.call_sync_handlers()
+        if self.flags.get("no_sync"):
+            LOG.warning("Initial device sync turned off")
+        else:
+            self.call_sync_handlers()
 
     def _reset_connection(self):
         LOG.warning("PIM connection heartbeat timed out, disconnecting")
