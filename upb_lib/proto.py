@@ -51,17 +51,6 @@ class Connection(asyncio.Protocol):
         self._buffer = ""
         self._paused = False
 
-        self._msgmap = {
-            "PA": "accepted",
-            "PB": "busy",
-            "PE": "error",
-            "PK": "ack",
-            "PN": "nack",
-            "PU": "update",
-            "PR": "registers",
-            "~~": "CONTROL",
-        }
-
     def connection_made(self, transport):
         LOG.debug("connected callback")
         self._transport = transport
@@ -140,7 +129,11 @@ class Connection(asyncio.Protocol):
         return False
 
     def _handle_pim_update_msg(self, line):
-        msg = bytearray.fromhex(line[2:-2])  # strip PIM command & cksum
+        try:
+            msg = bytearray.fromhex(line[2:-2])  # strip PIM command & cksum
+        except ValueError:
+            return
+
         if self._is_repeated_message(msg):
             LOG.debug("Repeated message; discarded.")
             return
@@ -161,7 +154,7 @@ class Connection(asyncio.Protocol):
         while "\r" in self._buffer:
             line, self._buffer = self._buffer.split("\r", 1)
             pim_command = line[:2]
-            LOG.debug(f"data_received: {self._msgmap.get(pim_command):10} '{line}'")
+            LOG.debug(f"data_received:  '{line}'")
 
             if pim_command == "PU":
                 self._handle_pim_update_msg(line)
