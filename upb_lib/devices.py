@@ -52,6 +52,8 @@ class UpbDevice(Element):
         )
 
         self._pim.send(encode_fn(self._addr, brightness, rate), False)
+        if self._pim.flags.get("report_state"):
+            self._pim.send(encode_report_state(self._addr))
         self.setattr("status", brightness)
 
     def turn_on(self, brightness=100, rate=-1):
@@ -76,6 +78,8 @@ class UpbDevice(Element):
         if rate < 30 and not self._pim.flags.get("unlimited_blink_rate"):
             rate = 30
         self._pim.send(encode_blink(self._addr, rate), False)
+        if self._pim.flags.get("report_state"):
+            self._pim.send(encode_report_state(self._addr))
         self.setattr("status", 100)
 
     def update_status(self):
