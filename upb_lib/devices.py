@@ -11,7 +11,7 @@ from .message import (
     encode_goto,
     encode_report_state,
 )
-from .util import seconds_to_rate
+from .util import check_dim_params
 
 LOG = logging.getLogger(__name__)
 
@@ -44,30 +44,27 @@ class UpbDevice(Element):
         self.kind = None
         self.dimmable = None
 
-    def _level(self, brightness, rate):
-        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
-            rate = seconds_to_rate(rate)
+    def _level(self, brightness, rate, encode_fn):
+        if not self.dimmable:
+            brightness = 0 if brightness < 50 else 100
+        brightness, rate = check_dim_params(
+            brightness, rate, self._pim.flags.get("use_raw_rate")
+        )
 
-        if rate > 255:
-            rate = 255
-
-        self._pim.send(encode_goto(self._addr, brightness, rate), False)
+        self._pim.send(encode_fn(self._addr, brightness, rate), False)
         self.setattr("status", brightness)
 
     def turn_on(self, brightness=100, rate=-1):
         """(Helper) Set device to specified level"""
-        if not self.dimmable or brightness > 100:
-            brightness = 100
-        self._level(brightness, rate)
+        self._level(brightness, rate, encode_goto)
 
     def turn_off(self, rate=-1):
         """(Helper) Turn device off."""
-        self._level(0, rate)
+        self._level(0, rate, encode_goto)
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a device."""
-        self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
-        self.setattr("status", brightness)
+        self._level(brightness, rate, encode_fade_start)
 
     def fade_stop(self):
         """(Helper) Stop fading a device."""
@@ -124,14 +121,15 @@ class UpbDevices(Elements):
     def _goto_handler(self, msg):
         if msg.link:
             return
-        channel = msg.data[2] if len(msg.data) > 2 else 0
+        # TODO: is the next line correct for multi-channel devices?
+        channel = msg.data[2] - 1 if len(msg.data) > 2 else 0
         index = UpbAddr(msg.network_id, msg.dest_id, channel).index
         device = self.pim.devices.elements.get(index)
         if device:
-            level = msg.data[0]
+            level = msg.data[0] if len(msg.data) else -1
             device.setattr("status", level)
             LOG.debug(
-                f"(GOTO) Device {device.name}/{device.index} level is {device.status}"
+                f"(GOTO) Device {device.name}/{device.index} level {device.status}"
             )
 
     def _register_values_report_handler(self, msg):

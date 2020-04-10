@@ -64,15 +64,9 @@ class MessageDecode:
         self.msg_id = msg[5]
         self.data = msg[6:]
 
-        self.index = "{}_{}".format(self.network_id, self.src_id)
-
         for handler in self._handlers.get(self.msg_id, []):
             handler(self)
 
-        # LOG.debug( "Lnk %d Repeater %x Len %d Ack %x Transmit %d Seq %d",
-        #           self.link, self.repeater_request,
-        #           self.length, self.ack_request,
-        #           self.transmit_count, self.transmit_sequence )
         # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
         #           self.dest_id, self.src_id, self.msg_id)
 
@@ -99,10 +93,7 @@ def encode_message(ctl, addr, src_id, msg_code, data=""):
     msg[5] = msg_code
     if data:
         msg[6 : len(data) + 6] = data
-
-    # Checksum
-    msg[-1] = (256 - reduce(lambda x, y: x + y, msg)) % 256
-
+    msg[-1] = (256 - reduce(lambda x, y: x + y, msg)) % 256  # Checksum
     return msg.hex().upper()
 
 
@@ -120,7 +111,7 @@ def _encode_common(ctl, addr, cmd, level, rate):
     """Goto/fade_start, device or link"""
     rate = int(rate)
     args = bytearray([level])
-    if not addr.is_link and addr.channel > 0:
+    if addr.multi_channel and not addr.is_link:
         args.append(0xFF if rate == -1 else rate)
         args.append(addr.channel + 1)
     elif rate != -1:

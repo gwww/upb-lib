@@ -68,14 +68,6 @@ class Element:
         if close_the_changeset and self._changeset:
             self._call_callbacks()
 
-    def default_name(self, separator="-"):
-        """Return a default name for based on class and index of element"""
-        return self.__class__.__name__ + "{}{:03d}".format(separator, self._index + 1)
-
-    def is_default_name(self):
-        """Check if the name assigned is the default_name"""
-        return self.name == self.default_name()
-
     def __str__(self):
         varlist = {
             k: v
@@ -107,4 +99,4 @@ class Elements:
             yield element
 
     def __getitem__(self, key):
-        return self.elements[key]
+        return self.elements.get(key)

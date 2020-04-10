@@ -13,7 +13,7 @@ from .message import (
     encode_fade_stop,
     encode_goto,
 )
-from .util import seconds_to_rate
+from .util import check_dim_params, rate_to_seconds
 
 LOG = logging.getLogger(__name__)
 
@@ -53,22 +53,19 @@ class Link(Element):
 
     def goto(self, brightness, rate=-1):
         """(Helper) Goto level"""
-        if brightness > 100:
-            brightness = 100
-
         saved_rate = rate
-        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
-            rate = seconds_to_rate(rate)
-
+        brightness, rate = check_dim_params(
+            brightness, rate, self._pim.flags.get("use_raw_rate")
+        )
         self._pim.send(encode_goto(self._addr, brightness, rate), False)
         self.update_device_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a link."""
         saved_rate = rate
-        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
-            rate = seconds_to_rate(rate)
-
+        brightness, rate = check_dim_params(
+            brightness, rate, self._pim.flags.get("use_raw_rate")
+        )
         self._pim.send(encode_fade_start(self._addr, brightness, rate), False)
         self.update_device_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
@@ -123,27 +120,27 @@ class Links(Elements):
     def sync(self):
         pass
 
-    def _activate_deactivate(self, msg, upb_cmd, level=-1, rate=-1):
+    def _levels(self, msg, upb_cmd, level=-1, rate=-1):
         if not msg.link:
             return
+        breakpoint()
         index = LinkAddr(msg.network_id, msg.dest_id).index
         link = self.elements.get(index)
         if not link:
-            LOG.warning(f"UPB command received for unknown link: {index}")
             return
 
-        if rate >= 0 and not self._pim.flags.get("use_raw_rate"):
-            rate = seconds_to_rate(rate)
+        if rate >= 0:
+            rate = rate_to_seconds(rate)
 
         link.update_device_levels(upb_cmd, level, rate)
 
     def _activate_handler(self, msg):
-        self._activate_deactivate(msg, UpbCommand.ACTIVATE)
+        self._levels(msg, UpbCommand.ACTIVATE)
 
     def _deactivate_handler(self, msg):
-        self._activate_deactivate(msg, UpbCommand.DEACTIVATE)
+        self._levels(msg, UpbCommand.DEACTIVATE)
 
     def _goto_handler(self, msg):
         level = msg.data[0] if len(msg.data) else -1
         rate = msg.data[1] if len(msg.data) > 1 else -1
-        self._activate_deactivate(msg, UpbCommand.GOTO, level, rate)
+        self._levels(msg, UpbCommand.GOTO, level, rate)
