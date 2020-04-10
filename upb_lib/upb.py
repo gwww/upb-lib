@@ -3,7 +3,6 @@
 import asyncio
 import logging
 from functools import partial
-from importlib import import_module
 
 import serial_asyncio
 
@@ -41,11 +40,6 @@ class UpbPim:
         export_filepath = config.get("UPStartExportFile")
         if export_filepath:
             process_upstart_file(self, config["UPStartExportFile"])
-
-    def _create_element(self, element):
-        module = import_module("upb_lib." + element)
-        class_ = getattr(module, element.capitalize())
-        setattr(self, element, class_(self))
 
     async def _connect(self, connection_lost_callbk=None):
         """Asyncio connection to UPB."""
@@ -85,7 +79,7 @@ class UpbPim:
             )
 
     def _connected(self, transport, conn):
-        """Login and sync the UPB PIM panel to memory."""
+        """Sync the UPB PIM network to memory."""
         LOG.info("Connected to UPB PIM")
         self._conn = conn
         self._transport = transport
