@@ -14,6 +14,12 @@ def main():
             device = pim.devices[device_id]
             LOG.debug(f"{device_id} {device.name} {device.status}")
 
+    def _test_commands():
+        device = pim.devices["142_42_0"]
+        device.turn_on(75, 38)
+        link = pim.links["142_6"]
+        link.activate()
+
     logging.basicConfig(
         format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
         datefmt="%Y-%m-%d,%H:%M:%S",
@@ -27,6 +33,7 @@ def main():
 
         pim = UpbPim({"url": url, "UPStartExportFile": "bin/upb.upe"})
         pim.connect()
+        pim.loop.call_later(0.1, _test_commands)
         pim.loop.call_later(60, _dump_devices)
         pim.run()
     except KeyboardInterrupt:
