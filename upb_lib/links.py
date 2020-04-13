@@ -123,7 +123,6 @@ class Links(Elements):
     def _levels(self, msg, upb_cmd, level=-1, rate=-1):
         if not msg.link:
             return
-        breakpoint()
         index = LinkAddr(msg.network_id, msg.dest_id).index
         link = self.elements.get(index)
         if not link:
