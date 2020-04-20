@@ -4,7 +4,7 @@ Parse UPStart file and create UPB device/link objects
 
 import logging
 
-from .const import PRODUCTS
+from .const import MANUFACTURERS, PRODUCTS
 from .devices import UpbDevice, UpbAddr
 from .links import DeviceLink, Link, LinkAddr
 
@@ -16,8 +16,10 @@ def process_upstart_file(pim, filename):
         with open(filename) as f:
             _process_file(pim, f)
             f.close()
+        return True
     except EnvironmentError as e:
         LOG.error(f"Cannot open UPStart file '{filename}': {e}")
+        return False
 
 
 def _process_file(pim, file):
@@ -26,6 +28,7 @@ def _process_file(pim, file):
         if fields[0] == "0":
             # File overview record
             network_id = int(fields[4])
+            pim.network_id = network_id
         elif fields[0] == "2":
             _link_definition_record(pim, network_id, fields)
         elif fields[0] == "3":
@@ -57,6 +60,7 @@ def _device_definition_record(pim, network_id, fields):
             device.name = f"{fields[11]} {fields[12]}"
         device.version = f"{fields[5]}.{fields[6]}"
 
+        device.manufacturer = MANUFACTURERS.get(fields[3], fields[3])
         product = f"{fields[3]}/{fields[4]}"
         if product in PRODUCTS:
             device.product = PRODUCTS[product][0]

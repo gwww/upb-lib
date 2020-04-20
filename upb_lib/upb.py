@@ -26,23 +26,27 @@ class UpbPim:
         self._conn = None
         self._transport = None
         self.connection_lost_callbk = None
+        self.connected_callbk = None
         self._connection_retry_timer = 1
+        self._connection_retry_task = None
         self._message_decode = MessageDecode()
         self._sync_handlers = []
         self._heartbeat = None
         self.flags = {}
         self.devices = UpbDevices(self)
         self.links = Links(self)
+        self.config_ok = True
 
         self.flags = parse_flags(config.get("flags", ""))
 
         # Setup for all the types of elements tracked
         export_filepath = config.get("UPStartExportFile")
         if export_filepath:
-            process_upstart_file(self, config["UPStartExportFile"])
+            self.config_ok = process_upstart_file(self, config["UPStartExportFile"])
 
-    async def _connect(self, connection_lost_callbk=None):
+    async def _connect(self, connected_callbk=None, connection_lost_callbk=None):
         """Asyncio connection to UPB."""
+        self.connected_callbk = connected_callbk
         self.connection_lost_callbk = connection_lost_callbk
         url = self._config["url"]
         LOG.info("Connecting to UPB PIM at %s", url)
@@ -71,7 +75,9 @@ class UpbPim:
                 err,
                 self._connection_retry_timer,
             )
-            self.loop.call_later(self._connection_retry_timer, self.connect)
+            self._connection_retry_task = self.loop.call_later(
+                self._connection_retry_timer, self.connect
+            )
             self._connection_retry_timer = (
                 2 * self._connection_retry_timer
                 if self._connection_retry_timer < 32
@@ -84,6 +90,8 @@ class UpbPim:
         self._conn = conn
         self._transport = transport
         self._connection_retry_timer = 1
+        if self.connected_callbk:
+            self.connected_callbk()
 
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
@@ -103,10 +111,15 @@ class UpbPim:
     def _disconnected(self):
         LOG.warning("PIM at %s disconnected", self._config["url"])
         self._conn = None
-        self.loop.call_later(self._connection_retry_timer, self.connect)
+        if self.connection_lost_callbk:
+            self.connection_lost_callbk()
         if self._heartbeat:
             self._heartbeat.cancel()
             self._heartbeat = None
+        if not self._disconnect_requested:
+            self._connection_retry_task = self.loop.call_later(
+                self._connection_retry_timer, self.connect
+            )
 
     def add_handler(self, msg_type, handler):
         self._message_decode.add_handler(msg_type, handler)
@@ -148,9 +161,26 @@ class UpbPim:
         """Status of connection to PIM."""
         return self._conn is not None
 
-    def connect(self):
+    def connect(self, connected_callbk=None, connection_lost_callbk=None):
         """Connect to the panel"""
-        asyncio.ensure_future(self._connect())
+        self._disconnect_requested = False
+        asyncio.ensure_future(self._connect(connected_callbk, connection_lost_callbk))
+
+    def disconnect(self):
+        """Disconnect the connection from sending/receiving."""
+        self._disconnect_requested = True
+        if self._conn:
+            self._conn.stop()
+            self._conn = None
+        if self._connection_retry_task:
+            self._connection_retry_task.cancel()
+            self._connection_retry_task = None
+        if self._transport:
+            self._transport.close()
+            self._transport = None
+        if self._heartbeat:
+            self._heartbeat.cancel()
+            self._heartbeat = None
 
     def run(self):
         """Enter the asyncio loop."""

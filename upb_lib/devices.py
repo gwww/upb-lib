@@ -40,6 +40,7 @@ class UpbDevice(Element):
         self._addr = addr
         self.status = None
         self.version = None
+        self.manufacturer = None
         self.product = None
         self.kind = None
         self.dimmable = None

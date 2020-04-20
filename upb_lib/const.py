@@ -27,8 +27,15 @@ class PimCommand(Enum):
     WRITE_PIM_REGISTERS = "\x17"
 
 
+MANUFACTURERS = {
+    "1": "PCS Lighting",
+    "2": "MD Manufacturing",
+    "3": "Web Mountain",
+    "4": "Simply Automated",
+    "5": "Home Automation Inc.",
+}
+
 # UPB Product list from export document
-# Note: some of the manufacturer numbers are not known
 # Note: some products may be missing, this is the only list around
 PRODUCTS = {
     "1/1": ("(WS1) Wall Switch - 1 Channel", "Switch"),
