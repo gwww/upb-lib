@@ -5,6 +5,9 @@ Constants used across package
 from enum import Enum
 
 
+MINIMUM_BLINK_RATE = 20
+
+
 class UpbCommand(Enum):
     """UPB commands and responses"""
 

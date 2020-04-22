@@ -21,6 +21,7 @@ def rate_to_seconds(rate):
 
 def check_dim_params(brightness, rate, use_raw_rate):
     """Check that device params are in range."""
+    brightness = round(brightness)
     if brightness < 0:
         brightness = 0
     elif brightness > 100:
@@ -28,6 +29,7 @@ def check_dim_params(brightness, rate, use_raw_rate):
 
     if rate != -1:
         if use_raw_rate:
+            rate = round(rate)
             if rate < 0:
                 rate = 0
             elif rate > 255:

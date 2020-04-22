@@ -20,6 +20,10 @@ class Addr:
         return self._upb_id
 
     @property
+    def is_device(self):
+        return not self._is_link
+
+    @property
     def is_link(self):
         return self._is_link
 

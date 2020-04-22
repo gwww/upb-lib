@@ -111,7 +111,7 @@ def _encode_common(ctl, addr, cmd, level, rate):
     """Goto/fade_start, device or link"""
     rate = int(rate)
     args = bytearray([level])
-    if addr.multi_channel and not addr.is_link:
+    if addr.is_device and addr.multi_channel:
         args.append(0xFF if rate == -1 else rate)
         args.append(addr.channel + 1)
     elif rate != -1:
