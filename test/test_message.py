@@ -3,11 +3,11 @@ from upb_lib.devices import UpbAddr
 
 
 def test_create_control_word_all_zeros():
-    assert "{:04X}".format(create_control_word(False, 0, 0, 0, 0)) == "0000"
+    assert "{:04X}".format(create_control_word(False, 0, 0, 0)) == "0000"
 
 
 def test_create_control_word_all_ones():
-    assert "{:04X}".format(create_control_word(True, 3, 7, 3, 3)) == "E07F"
+    assert "{:04X}".format(create_control_word(True, 3, 7, 3)) == "E07C"
 
 
 def test_encode_message():

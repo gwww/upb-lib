@@ -71,12 +71,12 @@ class MessageDecode:
         #           self.dest_id, self.src_id, self.msg_id)
 
 
-def create_control_word(link, repeater=0, ack=0, tx_cnt=0, tx_seq=0):
+def create_control_word(link, repeater=0, ack=0, tx_cnt=0):
     ctl = (1 if link else 0) << 15
     ctl = ctl | (repeater << 13)
     ctl = ctl | (ack << 4)
     ctl = ctl | (tx_cnt << 2)
-    ctl = ctl | tx_seq
+    ctl = ctl | 0
     return ctl
 
 
