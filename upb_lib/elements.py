@@ -98,6 +98,10 @@ class Elements:
     def add_element(self, element):
         self.elements[element.index] = element
 
+    def connection_status_change(self, new_status):
+        for key, element in self.elements.items():
+            element._call_callbacks()
+
     def __iter__(self):
         for element in self.elements:
             yield element

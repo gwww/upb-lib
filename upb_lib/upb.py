@@ -6,7 +6,7 @@ from functools import partial
 
 import serial_asyncio
 
-from .devices import UpbDevices
+from .devices import UpbAddr, UpbDevices
 from .links import Links
 from .message import MessageDecode
 from .parse_upstart import process_upstart_file
@@ -92,6 +92,8 @@ class UpbPim:
         self._connection_retry_timer = 1
         if self.connected_callbk:
             self.connected_callbk()
+        self.devices.connection_status_change("connected")
+        self.links.connection_status_change("connected")
 
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
@@ -111,6 +113,8 @@ class UpbPim:
     def _disconnected(self):
         LOG.warning("PIM at %s disconnected", self._config["url"])
         self._conn = None
+        self.devices.connection_status_change("disconnected")
+        self.links.connection_status_change("disconnected")
         if self.connection_lost_callbk:
             self.connection_lost_callbk()
         if self._heartbeat:
@@ -143,9 +147,15 @@ class UpbPim:
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
 
-    def _timeout(self, msg_code):
-        LOG.warning(f"Timeout communicating with UPB device {msg_code}")
-        pass
+    def _timeout(self, addr):
+        device_id = UpbAddr(int(addr[0:2], 16), int(addr[2:4], 16), 0).index
+        device = self.devices.elements.get(device_id)
+        if device:
+            LOG.warning(
+                f"Timeout communicating with UPB device '{device.name}' ({device_id})"
+            )
+        else:
+            LOG.warning(f"Timeout communicating with UPB device {device_id}")
 
     def add_sync_handler(self, sync_handler):
         """Register a fn that synchronizes elements."""
