@@ -74,6 +74,9 @@ class Connection(asyncio.Protocol):
         self._cleanup()
         self._paused = True
 
+    def is_paused(self):
+        return self._paused
+
     def resume(self):
         """Restart the connection from sending/receiving."""
         self._paused = False

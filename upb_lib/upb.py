@@ -169,7 +169,7 @@ class UpbPim:
 
     def is_connected(self):
         """Status of connection to PIM."""
-        return self._conn is not None
+        return self._conn is not None and not self._conn.is_paused()
 
     def connect(self, connected_callbk=None, connection_lost_callbk=None):
         """Connect to the panel"""
@@ -204,9 +204,13 @@ class UpbPim:
     def pause(self):
         """Pause the connection from sending/receiving."""
         if self._conn:
+            self.devices.connection_status_change("paused")
+            self.links.connection_status_change("paused")
             self._conn.pause()
 
     def resume(self):
         """Restart the connection from sending/receiving."""
         if self._conn:
+            self.devices.connection_status_change("resume")
+            self.links.connection_status_change("resume")
             self._conn.resume()
