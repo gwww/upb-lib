@@ -102,7 +102,7 @@ class Connection(asyncio.Protocol):
         LOG.debug(f"Timeout waiting for {kind}; retrying {pkt.retry_count} more times.")
         if pkt.retry_count == 0:
             self._write_queue.pop(0)
-            self._timeout_callback(pkt.response)
+            self._timeout_callback(kind, pkt.response)
 
         pkt.retry_count -= 1
 

@@ -36,6 +36,7 @@ class UpbPim:
         self.devices = UpbDevices(self)
         self.links = Links(self)
         self.config_ok = True
+        self.network_id = None
 
         self.flags = parse_flags(config.get("flags", ""))
 
@@ -147,15 +148,18 @@ class UpbPim:
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
 
-    def _timeout(self, addr):
-        device_id = UpbAddr(int(addr[0:2], 16), int(addr[2:4], 16), 0).index
-        device = self.devices.elements.get(device_id)
-        if device:
-            LOG.warning(
-                f"Timeout communicating with UPB device '{device.name}' ({device_id})"
-            )
+    def _timeout(self, kind, addr):
+        if kind == "PIM":
+            LOG.warning(f"Timeout communicating with PIM, is it connected?")
         else:
-            LOG.warning(f"Timeout communicating with UPB device {device_id}")
+            device_id = UpbAddr(int(addr[0:2], 16), int(addr[2:4], 16), 0).index
+            device = self.devices.elements.get(device_id)
+            if device:
+                LOG.warning(
+                    f"Timeout communicating with UPB device '{device.name}' ({device_id})"
+                )
+            else:
+                LOG.warning(f"Timeout communicating with UPB device {device_id}")
 
     def add_sync_handler(self, sync_handler):
         """Register a fn that synchronizes elements."""
