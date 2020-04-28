@@ -93,8 +93,7 @@ class UpbPim:
         self._connection_retry_timer = 1
         if self.connected_callbk:
             self.connected_callbk()
-        self.devices.connection_status_change("connected")
-        self.links.connection_status_change("connected")
+        self._connection_status_change("connected")
 
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
@@ -114,8 +113,7 @@ class UpbPim:
     def _disconnected(self):
         LOG.warning("PIM at %s disconnected", self._config["url"])
         self._conn = None
-        self.devices.connection_status_change("disconnected")
-        self.links.connection_status_change("disconnected")
+        self._connection_status_change("disconnected")
         if self.connection_lost_callbk:
             self.connection_lost_callbk()
         if self._heartbeat:
@@ -132,21 +130,32 @@ class UpbPim:
     def _got_data(self, data):  # pylint: disable=no-self-use
         try:
             if data[:2] == "~~":
-                if data == "~~PAUSE":
-                    LOG.info("PAUSE connection")
-                    self.pause()
-                elif data == "~~RESUME":
-                    LOG.info("RESUME connection")
-                    self.resume()
-                    self.call_sync_handlers()
-                elif data == "~~HEARTBEAT":
-                    if self._heartbeat:
-                        self._heartbeat.cancel()
-                    self._heartbeat = self.loop.call_later(90, self._reset_connection)
+                self._handle_control_command(data)
             else:
                 self._message_decode.decode(data)
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
+
+    def _handle_control_command(self, data):
+        log_msg = data[2:].lower().replace("_", " ")
+        if data == "~~PAUSE" or data.startswith("~~SERIAL_DISCONNECTED"):
+            LOG.info(f"Pausing connection ({log_msg})")
+            self.pause()
+        elif data == "~~RESUME" or data == "~~SERIAL_CONNECTED":
+            LOG.info(f"Resuming connection ({log_msg})")
+            self.resume()
+            self.call_sync_handlers()
+        elif data == "~~HEARTBEAT":
+            if self._heartbeat:
+                self._heartbeat.cancel()
+            self._heartbeat = self.loop.call_later(90, self._reset_connection)
+        elif data == "~~ANOTHER_TCP_CLIENT_IS_CONNECTED":
+            self._connection_retry_timer = 60
+            LOG.warning(f"{log_msg} to ser2tcp, disconnecting")
+
+    def _connection_status_change(self, status):
+        self.devices.connection_status_change(status)
+        self.links.connection_status_change(status)
 
     def _timeout(self, kind, addr):
         if kind == "PIM":
@@ -208,13 +217,11 @@ class UpbPim:
     def pause(self):
         """Pause the connection from sending/receiving."""
         if self._conn:
-            self.devices.connection_status_change("paused")
-            self.links.connection_status_change("paused")
+            self._connection_status_change("paused")
             self._conn.pause()
 
     def resume(self):
         """Restart the connection from sending/receiving."""
         if self._conn:
-            self.devices.connection_status_change("resume")
-            self.links.connection_status_change("resume")
+            self._connection_status_change("resume")
             self._conn.resume()
