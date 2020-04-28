@@ -212,3 +212,4 @@ class Connection(asyncio.Protocol):
         self._cancel_timer()
         self._write_queue = []
         self._buffer = ""
+        self._awaiting = NOTHING
