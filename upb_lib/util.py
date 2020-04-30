@@ -8,12 +8,14 @@ SECONDS_TO_RATE = [0, 0.8, 1.6, 3.3, 5, 6.6, 10, 20, 30, 60, 120, 600, 1800, 360
 
 
 def seconds_to_rate(seconds):
+    """Convert seconds to a UPB rate value."""
     return min(
         range(len(SECONDS_TO_RATE)), key=lambda i: abs(SECONDS_TO_RATE[i] - seconds)
     )
 
 
 def rate_to_seconds(rate):
+    """Convert a UPB rate value to seconds."""
     if rate < len(SECONDS_TO_RATE):
         return SECONDS_TO_RATE[rate]
     return -1

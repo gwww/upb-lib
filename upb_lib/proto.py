@@ -16,6 +16,7 @@ UPB_PACKET = 2
 PIM_TO_BE_READY = 3
 
 
+# pylint: disable=too-few-public-methods
 class _Packet:
     """Details about a packet being sent"""
 
@@ -33,7 +34,7 @@ class _Packet:
 class Connection(asyncio.Protocol):
     """asyncio Protocol with line parsing and queuing writes"""
 
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(self, loop, connected, disconnected, got_data, timeout):
         self.loop = loop
         self._connected_callback = connected
@@ -75,6 +76,7 @@ class Connection(asyncio.Protocol):
         self._paused = True
 
     def is_paused(self):
+        """Is the connections paused?"""
         return self._paused
 
     def resume(self):
@@ -95,11 +97,13 @@ class Connection(asyncio.Protocol):
         self._timeout_task = None
 
         if not self._write_queue:
-            LOG.warning(f"_response_timeout: No writes are queued.")
+            LOG.warning("_response_timeout: No writes are queued.")
             return
 
         pkt = self._write_queue[0]
-        LOG.debug(f"Timeout waiting for {kind}; retrying {pkt.retry_count} more times.")
+        LOG.debug(
+            "Timeout waiting for %s; retrying %d more times.", kind, pkt.retry_count
+        )
         if pkt.retry_count == 0:
             self._write_queue.pop(0)
             self._timeout_callback(kind, pkt.response)
@@ -157,7 +161,7 @@ class Connection(asyncio.Protocol):
         while "\r" in self._buffer:
             line, self._buffer = self._buffer.split("\r", 1)
             pim_command = line[:2]
-            LOG.debug(f"data_received:  '{line}'")
+            LOG.debug("data_received:  '%s'", line)
 
             if pim_command == "PU":
                 self._handle_pim_update_msg(line)
@@ -173,7 +177,7 @@ class Connection(asyncio.Protocol):
                 self._got_data_callback(line)
 
         if pim_busy:
-            LOG.debug(f"PIM busy received, retrying in {PIM_BUSY_TIMEOUT} seconds")
+            LOG.debug("PIM busy received, retrying in %s seconds", PIM_BUSY_TIMEOUT)
             self._start_timer(PIM_BUSY_TIMEOUT, self._pim_busy_timeout)
             self._awaiting = PIM_TO_BE_READY
         else:
@@ -189,7 +193,7 @@ class Connection(asyncio.Protocol):
         self._start_timer(pkt.timeout, self._response_timeout)
         self._awaiting = UPB_PACKET if pkt.response else PIM_RESPONSE_MESSAGE
 
-        LOG.debug(f"write_data '{pkt.data}'")
+        LOG.debug("write_data '%s'", pkt.data)
         pim_command = "" if pkt.raw else PimCommand.TX_UPB_MSG.value
         self._transport.write(f"{pim_command}{pkt.data}\r".encode())
 

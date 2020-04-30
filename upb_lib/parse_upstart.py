@@ -12,13 +12,14 @@ LOG = logging.getLogger(__name__)
 
 
 def process_upstart_file(pim, filename):
+    """Process the UPStart UPE file."""
     try:
-        with open(filename) as f:
-            _process_file(pim, f)
-            f.close()
+        with open(filename) as file_handle:
+            _process_file(pim, file_handle)
+            file_handle.close()
         return True
-    except EnvironmentError as e:
-        LOG.error(f"Cannot open UPStart file '{filename}': {e}")
+    except EnvironmentError as exc:
+        LOG.error("Cannot open UPStart file: %s", exc)
         return False
 
 

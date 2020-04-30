@@ -19,24 +19,27 @@ LOG = logging.getLogger(__name__)
 class UpbPim:
     """Represents all the components on an UPB PIM."""
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, config, loop=None):
         """Initialize a new PIM instance."""
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
         self._conn = None
         self._transport = None
-        self.connection_lost_callbk = None
-        self.connected_callbk = None
         self._connection_retry_timer = 1
         self._connection_retry_task = None
         self._message_decode = MessageDecode()
         self._sync_handlers = []
+        self._disconnect_requested = False
         self._heartbeat = None
+
         self.flags = {}
         self.devices = UpbDevices(self)
         self.links = Links(self)
         self.config_ok = True
         self.network_id = None
+        self.connection_lost_callbk = None
+        self.connected_callbk = None
 
         self.flags = parse_flags(config.get("flags", ""))
 
@@ -125,6 +128,7 @@ class UpbPim:
             )
 
     def add_handler(self, msg_type, handler):
+        """Add handler for a message type."""
         self._message_decode.add_handler(msg_type, handler)
 
     def _got_data(self, data):  # pylint: disable=no-self-use
@@ -139,10 +143,10 @@ class UpbPim:
     def _handle_control_command(self, data):
         log_msg = data[2:].lower().replace("_", " ")
         if data == "~~PAUSE" or data.startswith("~~SERIAL_DISCONNECTED"):
-            LOG.info(f"Pausing connection ({log_msg})")
+            LOG.info("Pausing connection (%s)", log_msg)
             self.pause()
-        elif data == "~~RESUME" or data == "~~SERIAL_CONNECTED":
-            LOG.info(f"Resuming connection ({log_msg})")
+        elif data in ["~~RESUME", "~~SERIAL_CONNECTED"]:
+            LOG.info("Resuming connection (%s)", log_msg)
             self.resume()
             self.call_sync_handlers()
         elif data == "~~HEARTBEAT":
@@ -151,7 +155,7 @@ class UpbPim:
             self._heartbeat = self.loop.call_later(90, self._reset_connection)
         elif data == "~~ANOTHER_TCP_CLIENT_IS_CONNECTED":
             self._connection_retry_timer = 60
-            LOG.warning(f"{log_msg} to ser2tcp, disconnecting")
+            LOG.warning("%s to ser2tcp, disconnecting", log_msg)
 
     def _connection_status_change(self, status):
         self.devices.connection_status_change(status)
@@ -159,16 +163,18 @@ class UpbPim:
 
     def _timeout(self, kind, addr):
         if kind == "PIM":
-            LOG.warning(f"Timeout communicating with PIM, is it connected?")
+            LOG.warning("Timeout communicating with PIM, is it connected?")
         else:
             device_id = UpbAddr(int(addr[0:2], 16), int(addr[2:4], 16), 0).index
             device = self.devices.elements.get(device_id)
             if device:
                 LOG.warning(
-                    f"Timeout communicating with UPB device '{device.name}' ({device_id})"
+                    "Timeout communicating with UPB device '%s' (%s)",
+                    device.name,
+                    device_id,
                 )
             else:
-                LOG.warning(f"Timeout communicating with UPB device {device_id}")
+                LOG.warning("Timeout communicating with UPB device %s", device_id)
 
     def add_sync_handler(self, sync_handler):
         """Register a fn that synchronizes elements."""

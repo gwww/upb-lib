@@ -22,6 +22,8 @@ DeviceLink = namedtuple("DeviceLink", "device_id, device_level")
 
 
 class LinkAddr(Addr):
+    """Representation of a link address."""
+
     def __init__(self, network_id, upb_id):
         super().__init__(network_id, upb_id, True)
         self._index = f"{self.network_id}_{self.upb_id}"
@@ -39,6 +41,7 @@ class Link(Element):
         self.last_change = None
 
     def add_device(self, device_link):
+        """Add the device to the link."""
         self.devices.append(device_link)
 
     def activate(self):
@@ -80,20 +83,21 @@ class Link(Element):
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
         if rate < MINIMUM_BLINK_RATE and not self._pim.flags.get(
-            "unlimited_blink_rate"
+            "unlimited_blink_rate"  # pylint: disable=bad-continuation
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
         self._pim.send(encode_blink(self._addr, rate), False)
         self.update_device_levels(UpbCommand.BLINK, 100)
 
     def update_device_levels(self, upb_cmd, level=-1, rate=-1):
-        LOG.debug(f"{upb_cmd.name.capitalize()} {self.name} {self.index}")
+        """Update the dim level on all devices in this link."""
+        LOG.debug("%s %s %s", upb_cmd.name.capitalize(), self.name, self.index)
         for device_link in self.devices:
             device = self._pim.devices.elements.get(device_link.device_id)
             if not device:
                 continue
 
-            if upb_cmd == UpbCommand.GOTO or upb_cmd == UpbCommand.FADE_START:
+            if upb_cmd in [UpbCommand.GOTO, UpbCommand.FADE_START]:
                 set_level = level
             elif upb_cmd == UpbCommand.ACTIVATE:
                 set_level = device_link.device_level
@@ -101,7 +105,7 @@ class Link(Element):
                 set_level = 0
 
             device.setattr("status", set_level)
-            LOG.debug(f"  Updating '{device.name}' to level {set_level}")
+            LOG.debug("  Updating '%s' to level %d", device.name, set_level)
 
         changes = {"timestamp": time()}
         if level >= 0:
@@ -144,6 +148,6 @@ class Links(Elements):
         self._levels(msg, UpbCommand.DEACTIVATE)
 
     def _goto_handler(self, msg):
-        level = msg.data[0] if len(msg.data) else -1
+        level = msg.data[0] if len(msg.data) > 0 else -1
         rate = msg.data[1] if len(msg.data) > 1 else -1
         self._levels(msg, UpbCommand.GOTO, level, rate)

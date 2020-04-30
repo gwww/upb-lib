@@ -17,6 +17,8 @@ LOG = logging.getLogger(__name__)
 
 
 class UpbAddr(Addr):
+    """Representation of a UPB device address."""
+
     def __init__(self, network_id, upb_id, channel, multi_channel=False):
         super().__init__(network_id, upb_id)
         self._channel = channel
@@ -25,10 +27,12 @@ class UpbAddr(Addr):
 
     @property
     def channel(self):
+        """Address channel."""
         return self._channel
 
     @property
     def multi_channel(self):
+        """Is address part of multi-channel device."""
         return self._multi_channel
 
 
@@ -57,6 +61,11 @@ class UpbDevice(Element):
             self._pim.send(encode_report_state(self._addr))
         self.setattr("status", brightness)
 
+    @property
+    def addr(self):
+        """Get the device address."""
+        return self._addr
+
     def turn_on(self, brightness=100, rate=-1):
         """(Helper) Set device to specified level"""
         self._level(brightness, rate, encode_goto)
@@ -77,7 +86,7 @@ class UpbDevice(Element):
     def blink(self, rate=-1):
         """(Helper) Blink a device."""
         if rate < MINIMUM_BLINK_RATE and not self._pim.flags.get(
-            "unlimited_blink_rate"
+            "unlimited_blink_rate"  # pylint: disable=bad-continuation
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
         self._pim.send(encode_blink(self._addr, rate), False)
@@ -104,11 +113,12 @@ class UpbDevices(Elements):
         pim.add_handler(UpbCommand.GOTO, self._goto_handler)
 
     def sync(self):
+        """Sync handler for devices."""
         for device_id in self.elements:
             device = self.elements[device_id]
-            if device._addr.channel > 0:
+            if device.addr.channel > 0:
                 continue
-            self.pim.send(encode_report_state(device._addr))
+            self.pim.send(encode_report_state(device.addr))
 
     def _device_state_report_handler(self, msg):
         status_length = len(msg.data)
@@ -128,17 +138,17 @@ class UpbDevices(Elements):
     def _goto_handler(self, msg):
         if msg.link:
             return
-        # TODO: is the next line correct for multi-channel devices?
         channel = msg.data[2] - 1 if len(msg.data) > 2 else 0
         index = UpbAddr(msg.network_id, msg.dest_id, channel).index
         device = self.pim.devices.elements.get(index)
         if device:
-            level = msg.data[0] if len(msg.data) else -1
+            level = msg.data[0] if len(msg.data) > 0 else -1
             device.setattr("status", level)
             LOG.debug(
-                f"(GOTO) Device {device.name}/{device.index} level {device.status}"
+                "(GOTO) Device %s/%s level %d", device.name, device.index, device.status
             )
 
+    # pylint: disable=no-self-use
     def _register_values_report_handler(self, msg):
         data = msg.data
         if len(data) != 17:
@@ -149,10 +159,10 @@ class UpbDevices(Elements):
             pass
         elif start_register == 16:
             network_name = data[1:].decode("UTF-8").strip()
-            LOG.debug("Network name '{}'".format(network_name))
+            LOG.debug("Network name '%s'", network_name)
         elif start_register == 32:
             room_name = data[1:].decode("UTF-8").strip()
-            LOG.debug("Room name '{}'".format(room_name))
+            LOG.debug("Room name '%s'", room_name)
         elif start_register == 48:
             device_name = data[1:].decode("UTF-8").strip()
-            LOG.debug("Device name '{}'".format(device_name))
+            LOG.debug("Device name '%s'", device_name)

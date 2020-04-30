@@ -12,7 +12,10 @@ from .const import UpbCommand
 LOG = logging.getLogger(__name__)
 PIM_ID = 0xFF
 
-MessageEncode = namedtuple("MessageEncode", ["message", "response_command"])
+Message = namedtuple(
+    "Message",
+    "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",
+)
 
 
 class MessageDecode:
@@ -51,27 +54,25 @@ class MessageDecode:
             raise ValueError("UPB message less than 12 characters")
 
         control = int.from_bytes(msg[0:2], byteorder="big")
-        self.link = (control & 0x8000) != 0
-        self.repeater_request = (control >> 13) & 3
-        self.length = (control >> 8) & 31
-        self.ack_request = (control >> 4) & 7
-        self.transmit_count = (control >> 2) & 3
-        self.transmit_sequence = control & 3
-
-        self.network_id = msg[2]
-        self.dest_id = msg[3]
-        self.src_id = msg[4]
-        self.msg_id = msg[5]
-        self.data = msg[6:]
-
-        for handler in self._handlers.get(self.msg_id, []):
-            handler(self)
-
-        # LOG.debug( "NID %d Dst %d Src %d Cmd 0x%x", self.network_id,
-        #           self.dest_id, self.src_id, self.msg_id)
+        message = Message(
+            link=(control & 0x8000) != 0,
+            repeater_req=(control >> 13) & 3,
+            length=(control >> 8) & 31,
+            ack_req=(control >> 4) & 7,
+            tx_count=(control >> 2) & 3,
+            tx_seq=control & 3,
+            network_id=msg[2],
+            dest_id=msg[3],
+            src_id=msg[4],
+            msg_id=msg[5],
+            data=msg[6:],
+        )
+        for handler in self._handlers.get(message.msg_id, []):
+            handler(message)
 
 
 def create_control_word(link, repeater=0, ack=0, tx_cnt=0):
+    """Create a control word in UPB message."""
     ctl = (1 if link else 0) << 15
     ctl = ctl | (repeater << 13)
     ctl = ctl | (ack << 4)
@@ -142,4 +143,5 @@ def encode_blink(addr, rate, ctl=-1):
 
 
 def encode_report_state(addr, ctl=-1):
+    """Report state message."""
     return encode_message(ctl, addr, PIM_ID, UpbCommand.REPORT_STATE.value)
