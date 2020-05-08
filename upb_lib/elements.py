@@ -37,12 +37,17 @@ class Addr:
         """Return the address in index form."""
         return self._index
 
+    def __str__(self):
+        """Return the address in index form."""
+        return self._index
+
 
 class Element:
     """Element class"""
 
-    def __init__(self, index, pim):
-        self._index = index
+    def __init__(self, addr, pim):
+        self._addr = addr
+        self._index = addr.index
         self._pim = pim
         self._callbacks = []
         self._changeset = {}
@@ -52,6 +57,11 @@ class Element:
     def index(self):
         """Get the index, immutable once class created"""
         return self._index
+
+    @property
+    def addr(self):
+        """Get the address."""
+        return self._addr
 
     def add_callback(self, callback):
         """Callbacks when attribute of element changes"""

@@ -33,11 +33,8 @@ class Link(Element):
     """Class representing a UPB Link."""
 
     def __init__(self, addr, pim):
-        super().__init__(addr.index, pim)
+        super().__init__(addr, pim)
         self.devices = []
-        self._addr = addr
-        self.network_id = addr.network_id
-        self.link_id = addr.upb_id
         self.last_change = None
 
     def add_device(self, device_link):

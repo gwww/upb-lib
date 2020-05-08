@@ -40,8 +40,7 @@ class UpbDevice(Element):
     """Class representing a UPB device."""
 
     def __init__(self, addr, pim):
-        super().__init__(addr.index, pim)
-        self._addr = addr
+        super().__init__(addr, pim)
         self.status = None
         self.version = None
         self.manufacturer = None
