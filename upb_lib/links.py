@@ -16,6 +16,14 @@ from .message import (
 from .util import check_dim_params, rate_to_seconds
 
 LOG = logging.getLogger(__name__)
+UPB_COMMAND_TO_ACTION_MAPPING = {
+    "GOTO": "goto",
+    "ACTIVATE": "activated",
+    "DEACTIVATE": "deactivated",
+    "BLINK": "blink",
+    "FADE_START": "fade_started",
+    "FADE_STOP": "fade_stopped",
+}
 
 
 DeviceLink = namedtuple("DeviceLink", "device_id, device_level")
@@ -105,11 +113,9 @@ class Link(Element):
             LOG.debug("  Updating '%s' to level %d", device.name, set_level)
 
         changes = {"timestamp": time()}
-        if level >= 0:
-            changes["level"] = level
-        if rate >= 0:
-            changes["rate"] = rate
-        changes["command"] = upb_cmd.name.lower()
+        changes["command"] = UPB_COMMAND_TO_ACTION_MAPPING[upb_cmd.name]
+        changes["level"] = level
+        changes["rate"] = rate
         self.setattr("last_change", changes)
 
 
