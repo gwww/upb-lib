@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from functools import reduce
+
 from .const import PimCommand
 
 LOG = logging.getLogger(__name__)
@@ -45,6 +47,9 @@ class Connection(asyncio.Protocol):
         self._last_message = bytearray()
         self._last_sequence = 0
 
+        self._gateway = False
+        self._raw_mode = False
+
         self._transport = None
         self._awaiting = NOTHING
         self._timeout_task = None
@@ -63,6 +68,12 @@ class Connection(asyncio.Protocol):
         self._cleanup()
         if self._disconnected_callback:
             self._disconnected_callback()
+
+    def gateway_mode(self):
+        self._gateway = True
+
+    def raw_mode(self, mode: bool):
+        self._raw_mode = mode
 
     def stop(self):
         """Stop the connection from sending/receiving/reconnecting."""
@@ -158,23 +169,35 @@ class Connection(asyncio.Protocol):
     def data_received(self, data):
         self._buffer += data.decode("ISO-8859-1")
         pim_busy = False
-        while "\r" in self._buffer:
-            line, self._buffer = self._buffer.split("\r", 1)
-            pim_command = line[:2]
-            LOG.debug("data_received:  '%s'", line)
+        line_end_marker = "\x00" if self._gateway else "\r"
+        while line_end_marker in self._buffer:
+            line, self._buffer = self._buffer.split(line_end_marker, 1)
 
-            if pim_command == "PU":
-                self._handle_pim_update_msg(line)
-            elif pim_command == "PA":
-                if self._awaiting == PIM_RESPONSE_MESSAGE:
-                    self._done_with_write_queue_head()
-            elif pim_command == "PB":
-                pim_busy = True
-            elif pim_command == "PE":
-                self._done_with_write_queue_head()
-            elif pim_command == "~~":
-                # Received when connected to ser2tcp (github.com/gwww/ser2tcp)
+            if self._raw_mode:
                 self._got_data_callback(line)
+            else:
+                if self._gateway:
+                    if line[0] == 0x31:  # Response to sending PIM command
+                        line = "PA"
+                    elif line[0] == 0xE0:  # Unsolicited PIM command
+                        line = line[3:-1]
+                    elif line[0] == 0xFF:  # NAK
+                        line = "PE"
+
+                pim_command = line[:2]
+                LOG.debug("data_received:  '%s'", line)
+                if pim_command == "PU":
+                    self._handle_pim_update_msg(line)
+                elif pim_command == "PA":
+                    if self._awaiting == PIM_RESPONSE_MESSAGE:
+                        self._done_with_write_queue_head()
+                elif pim_command == "PB":
+                    pim_busy = True
+                elif pim_command == "PE":
+                    self._done_with_write_queue_head()
+                elif pim_command == "~~":
+                    # Received when connected to ser2tcp (github.com/gwww/ser2tcp)
+                    self._got_data_callback(line)
 
         if pim_busy:
             LOG.debug("PIM busy received, retrying in %s seconds", PIM_BUSY_TIMEOUT)
@@ -194,8 +217,17 @@ class Connection(asyncio.Protocol):
         self._awaiting = UPB_PACKET if pkt.response else PIM_RESPONSE_MESSAGE
 
         LOG.debug("write_data '%s'", pkt.data)
-        pim_command = "" if pkt.raw else PimCommand.TX_UPB_MSG.value
-        self._transport.write(f"{pim_command}{pkt.data}\r".encode())
+        pim_pkt = (
+            f"{'' if pkt.raw else PimCommand.TX_UPB_MSG.value}{pkt.data}\r".encode()
+        )
+        if self._gateway:
+            gtw_pkt = bytearray(len(pim_pkt) + 4)
+            gtw_pkt[0] = 0x30
+            gtw_pkt[1:3] = len(pim_pkt).to_bytes(2, byteorder="big")
+            gtw_pkt[3 : len(pim_pkt) + 3] = pim_pkt
+            gtw_pkt[-1] = (256 - reduce(lambda x, y: x + y, pim_pkt)) % 256  # Checksum
+            pim_pkt = gtw_pkt
+        self._transport.write(pim_pkt)
 
     def _done_with_write_queue_head(self):
         self._cancel_timer()
