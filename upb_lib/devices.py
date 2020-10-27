@@ -104,12 +104,12 @@ class UpbDevices(Elements):
     def __init__(self, pim):
         super().__init__(pim)
         pim.add_handler(
-            UpbCommand.DEVICE_STATE_REPORT, self._device_state_report_handler
+            UpbCommand.DEVICE_STATE_REPORT.value, self._device_state_report_handler
         )
         pim.add_handler(
-            UpbCommand.REGISTER_VALUES_REPORT, self._register_values_report_handler
+            UpbCommand.REGISTER_VALUES_REPORT.value, self._register_values_report_handler
         )
-        pim.add_handler(UpbCommand.GOTO, self._goto_handler)
+        pim.add_handler(UpbCommand.GOTO.value, self._goto_handler)
 
     def sync(self):
         """Sync handler for devices."""

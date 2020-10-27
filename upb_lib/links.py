@@ -124,9 +124,9 @@ class Links(Elements):
 
     def __init__(self, pim):
         super().__init__(pim)
-        pim.add_handler(UpbCommand.ACTIVATE, self._activate_handler)
-        pim.add_handler(UpbCommand.DEACTIVATE, self._deactivate_handler)
-        pim.add_handler(UpbCommand.GOTO, self._goto_handler)
+        pim.add_handler(UpbCommand.ACTIVATE.value, self._activate_handler)
+        pim.add_handler(UpbCommand.DEACTIVATE.value, self._deactivate_handler)
+        pim.add_handler(UpbCommand.GOTO.value, self._goto_handler)
 
     def sync(self):
         pass

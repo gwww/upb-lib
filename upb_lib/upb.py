@@ -142,6 +142,7 @@ class UpbPim:
     def _connection_status_change(self, status):
         self.devices.connection_status_change(status)
         self.links.connection_status_change(status)
+        self._message_decode.call_handlers(status, {})
 
     def _timeout(self, kind, addr):
         if kind == "PIM":

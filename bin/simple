@@ -20,6 +20,12 @@ def main():
         link = pim.links["142_6"]
         link.activate()
 
+    def connected():
+        print("Connected!!!")
+
+    def disconnected():
+        print("Disconnected!!!")
+
     logging.basicConfig(
         format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
@@ -32,6 +38,8 @@ def main():
             exit(0)
 
         pim = UpbPim({"url": url, "UPStartExportFile": "bin/upb.upe"})
+        pim.add_handler("connected", connected)
+        pim.add_handler("disconnected", disconnected)
         pim.connect()
         # pim.loop.call_later(0.1, _test_commands)
         pim.loop.call_later(60, _dump_devices)

@@ -27,12 +27,17 @@ class MessageDecode:
 
     def add_handler(self, message_type, handler):
         """Manage callbacks for message handlers."""
-        upb_command = message_type.value
+        upb_command = message_type
         if upb_command not in self._handlers:
             self._handlers[upb_command] = []
 
         if handler not in self._handlers[upb_command]:
             self._handlers[upb_command].append(handler)
+
+    def call_handlers(self, cmd, message):
+        """Call the message/event handlers."""
+        for handler in self._handlers.get(cmd, []):
+            handler(**message) if isinstance(message, dict) else handler(message)
 
     def decode(self, msg):
         """
@@ -67,8 +72,7 @@ class MessageDecode:
             msg_id=msg[5],
             data=msg[6:],
         )
-        for handler in self._handlers.get(message.msg_id, []):
-            handler(message)
+        self.call_handlers(message.msg_id, message)
 
 
 def create_control_word(link, repeater=0, ack=0, tx_cnt=0):
