@@ -25,7 +25,6 @@ class UpbPim:
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
         self._conn = None
-        self._transport = None
         self._connection_retry_timer = 1
         self._connection_retry_task = None
         self._message_decode = MessageDecode()
@@ -88,11 +87,10 @@ class UpbPim:
                 else 60
             )
 
-    def _connected(self, transport, conn):
+    def _connected(self, conn):
         """Sync the UPB PIM network to memory."""
         LOG.info("Connected to UPB PIM")
         self._conn = conn
-        self._transport = transport
         self._connection_retry_timer = 1
         if self.connected_callbk:
             self.connected_callbk()
@@ -110,7 +108,7 @@ class UpbPim:
 
     def _reset_connection(self):
         LOG.warning("PIM connection heartbeat timed out, disconnecting")
-        self._transport.close()
+        self._conn.close()
         self._heartbeat = None
 
     def _disconnected(self):
@@ -199,14 +197,11 @@ class UpbPim:
         """Disconnect the connection from sending/receiving."""
         self._disconnect_requested = True
         if self._conn:
-            self._conn.stop()
+            self._conn.close()
             self._conn = None
         if self._connection_retry_task:
             self._connection_retry_task.cancel()
             self._connection_retry_task = None
-        if self._transport:
-            self._transport.close()
-            self._transport = None
         if self._heartbeat:
             self._heartbeat.cancel()
             self._heartbeat = None
