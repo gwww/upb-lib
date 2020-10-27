@@ -107,7 +107,8 @@ class UpbDevices(Elements):
             UpbCommand.DEVICE_STATE_REPORT.value, self._device_state_report_handler
         )
         pim.add_handler(
-            UpbCommand.REGISTER_VALUES_REPORT.value, self._register_values_report_handler
+            UpbCommand.REGISTER_VALUES_REPORT.value,
+            self._register_values_report_handler,
         )
         pim.add_handler(UpbCommand.GOTO.value, self._goto_handler)
 

@@ -37,7 +37,10 @@ class MessageDecode:
     def call_handlers(self, cmd, message):
         """Call the message/event handlers."""
         for handler in self._handlers.get(cmd, []):
-            handler(**message) if isinstance(message, dict) else handler(message)
+            if isinstance(message, dict):
+                handler(**message)
+            else:
+                handler(message)
 
     def decode(self, msg):
         """

@@ -35,7 +35,6 @@ class UpbPim:
         self.config_ok = True
         self.network_id = None
         self.connected_callbk = None
-
         self.flags = parse_flags(config.get("flags", ""))
 
         # Setup for all the types of elements tracked

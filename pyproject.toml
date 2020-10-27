@@ -27,6 +27,9 @@ attrs = "^19.1"
 colorlog = "^4.0"
 black = "19.3b0"
 
+[tool.pylint.SIMILARITIES]
+min-similarity-lines = 8
+
 [build-system]
 requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"

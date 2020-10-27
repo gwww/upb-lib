@@ -39,7 +39,7 @@ class Addr:
 
     def __str__(self):
         """Return the address in index form."""
-        return self._index
+        return str(self._index)
 
 
 class Element:
