@@ -48,7 +48,7 @@ class Connection(asyncio.Protocol):
 
         self._transport = None
         self._awaiting = NOTHING
-        self._timeout_task = None
+        self._pim_timeout_task = None
         self._heartbeat_timeout_task = None
         self._write_queue = []
         self._buffer = ""
@@ -97,7 +97,7 @@ class Connection(asyncio.Protocol):
     def _response_timeout(self):
         kind = "PIM" if self._awaiting == PIM_RESPONSE_MESSAGE else "packet"
         self._awaiting = NOTHING
-        self._timeout_task = None
+        self._pim_timeout_task = None
 
         if not self._write_queue:
             LOG.warning("_response_timeout: No writes are queued.")
@@ -197,7 +197,7 @@ class Connection(asyncio.Protocol):
 
         if pim_busy:
             LOG.debug("PIM busy received, retrying in %s seconds", PIM_BUSY_TIMEOUT)
-            self._start_timer(PIM_BUSY_TIMEOUT, self._pim_busy_timeout)
+            self._start_pim_timer(PIM_BUSY_TIMEOUT, self._pim_busy_timeout)
             self._awaiting = PIM_TO_BE_READY
         else:
             self._process_write_queue()
@@ -209,7 +209,7 @@ class Connection(asyncio.Protocol):
             return
 
         pkt = self._write_queue[0]
-        self._start_timer(pkt.timeout, self._response_timeout)
+        self._start_pim_timer(pkt.timeout, self._response_timeout)
         self._awaiting = UPB_PACKET if pkt.response else PIM_RESPONSE_MESSAGE
 
         LOG.debug("write_data '%s'", pkt.data)
@@ -217,22 +217,22 @@ class Connection(asyncio.Protocol):
         self._transport.write(f"{pim_command}{pkt.data}\r".encode())
 
     def _done_with_write_queue_head(self):
-        self._cancel_timer()
+        self._cancel_pim_timer()
         self._awaiting = NOTHING
         if self._write_queue:
             self._write_queue.pop(0)
 
-    def _cancel_timer(self):
-        if self._timeout_task:
-            self._timeout_task.cancel()
-            self._timeout_task = None
+    def _cancel_pim_timer(self):
+        if self._pim_timeout_task:
+            self._pim_timeout_task.cancel()
+            self._pim_timeout_task = None
 
-    def _start_timer(self, timeout, callback):
-        self._cancel_timer()
-        self._timeout_task = self.loop.call_later(timeout, callback)
+    def _start_pim_timer(self, timeout, callback):
+        self._cancel_pim_timer()
+        self._pim_timeout_task = self.loop.call_later(timeout, callback)
 
     def _cleanup(self):
-        self._cancel_timer()
+        self._cancel_pim_timer()
         self._cancel_heartbeat_timer()
         self._write_queue = []
         self._buffer = ""
