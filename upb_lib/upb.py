@@ -79,7 +79,7 @@ class UpbPim:
             )
             self._start_connection_retry_timer()
 
-    def _start_connection_retry_timer():
+    def _start_connection_retry_timer(self):
         timeout = self._connection_retry_time
         if timeout > 0:
             self._reconnect_task = self.loop.call_later(timeout, self.connect)
