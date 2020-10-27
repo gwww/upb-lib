@@ -35,8 +35,9 @@ class Connection(asyncio.Protocol):
     """asyncio Protocol with line parsing and queuing writes"""
 
     # pylint: disable=too-many-instance-attributes, too-many-arguments
-    def __init__(self, loop, connected, disconnected, got_data, timeout):
+    def __init__(self, loop, heartbeat, connected, disconnected, got_data, timeout):
         self.loop = loop
+        self._heartbeat_time = heartbeat
         self._connected_callback = connected
         self._disconnected_callback = disconnected
         self._got_data_callback = got_data
@@ -48,6 +49,7 @@ class Connection(asyncio.Protocol):
         self._transport = None
         self._awaiting = NOTHING
         self._timeout_task = None
+        self._heartbeat_timeout_task = None
         self._write_queue = []
         self._buffer = ""
         self._paused = False
@@ -156,7 +158,23 @@ class Connection(asyncio.Protocol):
 
         self._got_data_callback(msg)
 
+    def _cancel_heartbeat_timer(self):
+        if self._heartbeat_timeout_task:
+            self._heartbeat_timeout_task.cancel()
+
+    def _heartbeat_timeout(self):
+        LOG.warning("UPB connection heartbeat timed out, disconnecting")
+        self._transport.close()
+
+    def _restart_heartbeat_timer(self):
+        self._cancel_heartbeat_timer()
+        if self._heartbeat_time > 0:
+            self._heartbeat_timeout_task = self.loop.call_later(
+                self._heartbeat_time, self._heartbeat_timeout
+            )
+
     def data_received(self, data):
+        self._restart_heartbeat_timer()
         self._buffer += data.decode("ISO-8859-1")
         pim_busy = False
         while "\r" in self._buffer:
@@ -215,6 +233,7 @@ class Connection(asyncio.Protocol):
 
     def _cleanup(self):
         self._cancel_timer()
+        self._cancel_heartbeat_timer()
         self._write_queue = []
         self._buffer = ""
         self._awaiting = NOTHING

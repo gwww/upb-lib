@@ -29,7 +29,6 @@ class UpbPim:
         self._reconnect_task = None
         self._message_decode = MessageDecode()
         self._sync_handlers = []
-        self._heartbeat = None
 
         self.flags = {}
         self.devices = UpbDevices(self)
@@ -53,9 +52,11 @@ class UpbPim:
         url = self._config["url"]
         LOG.info("Connecting to UPB PIM at %s", url)
         scheme, dest, param = parse_url(url)
+        heartbeat_time = 90 if scheme == "tcp" else -1
         conn = partial(
             Connection,
             self.loop,
+            heartbeat_time,
             self._connected,
             self._disconnected,
             self._got_data,
@@ -104,20 +105,12 @@ class UpbPim:
         else:
             self.call_sync_handlers()
 
-    def _reset_connection(self):
-        LOG.warning("PIM connection heartbeat timed out, disconnecting")
-        self._connection.close()
-        self._heartbeat = None
-
     def _disconnected(self):
         LOG.warning("PIM at %s disconnected", self._config["url"])
         self._connection = None
         self._connection_status_change("disconnected")
         if self.connection_lost_callbk:
             self.connection_lost_callbk()
-        if self._heartbeat:
-            self._heartbeat.cancel()
-            self._heartbeat = None
         self._start_connection_retry_timer()
 
     def add_handler(self, msg_type, handler):
@@ -142,10 +135,6 @@ class UpbPim:
             LOG.info("Resuming connection (%s)", log_msg)
             self.resume()
             self.call_sync_handlers()
-        elif data == "~~HEARTBEAT":
-            if self._heartbeat:
-                self._heartbeat.cancel()
-            self._heartbeat = self.loop.call_later(90, self._reset_connection)
         elif data == "~~ANOTHER_TCP_CLIENT_IS_CONNECTED":
             self._connection_retry_time = 60
             LOG.warning("%s to ser2tcp, disconnecting", log_msg)
@@ -196,9 +185,6 @@ class UpbPim:
         if self._reconnect_task:
             self._reconnect_task.cancel()
             self._reconnect_task = None
-        if self._heartbeat:
-            self._heartbeat.cancel()
-            self._heartbeat = None
 
     def run(self):
         """Enter the asyncio loop."""

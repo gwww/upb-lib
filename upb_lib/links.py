@@ -88,7 +88,7 @@ class Link(Element):
     def blink(self, rate=-1):
         """(Helper) Blink a link."""
         if rate < MINIMUM_BLINK_RATE and not self._pim.flags.get(
-            "unlimited_blink_rate"  # pylint: disable=bad-continuation
+            "unlimited_blink_rate"
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
         self._pim.send(encode_blink(self._addr, rate), False)
