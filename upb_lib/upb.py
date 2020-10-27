@@ -24,7 +24,7 @@ class UpbPim:
         """Initialize a new PIM instance."""
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
-        self._conn = None
+        self._connection = None
         self._connection_retry_timer = 1
         self._connection_retry_task = None
         self._message_decode = MessageDecode()
@@ -90,7 +90,7 @@ class UpbPim:
     def _connected(self, conn):
         """Sync the UPB PIM network to memory."""
         LOG.info("Connected to UPB PIM")
-        self._conn = conn
+        self._connection = conn
         self._connection_retry_timer = 1
         if self.connected_callbk:
             self.connected_callbk()
@@ -108,12 +108,12 @@ class UpbPim:
 
     def _reset_connection(self):
         LOG.warning("PIM connection heartbeat timed out, disconnecting")
-        self._conn.close()
+        self._connection.close()
         self._heartbeat = None
 
     def _disconnected(self):
         LOG.warning("PIM at %s disconnected", self._config["url"])
-        self._conn = None
+        self._connection = None
         self._connection_status_change("disconnected")
         if self.connection_lost_callbk:
             self.connection_lost_callbk()
@@ -186,7 +186,7 @@ class UpbPim:
 
     def is_connected(self):
         """Status of connection to PIM."""
-        return self._conn is not None and not self._conn.is_paused()
+        return self._connection is not None and not self._connection.is_paused()
 
     def connect(self, connected_callbk=None, connection_lost_callbk=None):
         """Connect to the panel"""
@@ -196,9 +196,9 @@ class UpbPim:
     def disconnect(self):
         """Disconnect the connection from sending/receiving."""
         self._disconnect_requested = True
-        if self._conn:
-            self._conn.close()
-            self._conn = None
+        if self._connection:
+            self._connection.close()
+            self._connection = None
         if self._connection_retry_task:
             self._connection_retry_task.cancel()
             self._connection_retry_task = None
@@ -212,17 +212,17 @@ class UpbPim:
 
     def send(self, msg, response_required=True, raw=False):
         """Send a message to UPB PIM."""
-        if self._conn:
-            self._conn.write_data(msg, response_required, raw=raw)
+        if self._connection:
+            self._connection.write_data(msg, response_required, raw=raw)
 
     def pause(self):
         """Pause the connection from sending/receiving."""
-        if self._conn:
+        if self._connection:
             self._connection_status_change("paused")
-            self._conn.pause()
+            self._connection.pause()
 
     def resume(self):
         """Restart the connection from sending/receiving."""
-        if self._conn:
+        if self._connection:
             self._connection_status_change("resume")
-            self._conn.resume()
+            self._connection.resume()
