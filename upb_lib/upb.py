@@ -25,11 +25,10 @@ class UpbPim:
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
         self._connection = None
-        self._connection_retry_timer = 1
-        self._connection_retry_task = None
+        self._connection_retry_time = 1
+        self._reconnect_task = None
         self._message_decode = MessageDecode()
         self._sync_handlers = []
-        self._disconnect_requested = False
         self._heartbeat = None
 
         self.flags = {}
@@ -76,22 +75,21 @@ class UpbPim:
             LOG.warning(
                 "Could not connect to UPB PIM (%s). Retrying in %d seconds",
                 err,
-                self._connection_retry_timer,
+                self._connection_retry_time,
             )
-            self._connection_retry_task = self.loop.call_later(
-                self._connection_retry_timer, self.connect
-            )
-            self._connection_retry_timer = (
-                2 * self._connection_retry_timer
-                if self._connection_retry_timer < 32
-                else 60
-            )
+            self._start_connection_retry_timer()
+
+    def _start_connection_retry_timer():
+        timeout = self._connection_retry_time
+        if timeout > 0:
+            self._reconnect_task = self.loop.call_later(timeout, self.connect)
+            self._connection_retry_time = min(timeout * 2, 60)
 
     def _connected(self, conn):
         """Sync the UPB PIM network to memory."""
         LOG.info("Connected to UPB PIM")
         self._connection = conn
-        self._connection_retry_timer = 1
+        self._connection_retry_time = 1
         if self.connected_callbk:
             self.connected_callbk()
         self._connection_status_change("connected")
@@ -120,10 +118,7 @@ class UpbPim:
         if self._heartbeat:
             self._heartbeat.cancel()
             self._heartbeat = None
-        if not self._disconnect_requested:
-            self._connection_retry_task = self.loop.call_later(
-                self._connection_retry_timer, self.connect
-            )
+        self._start_connection_retry_timer()
 
     def add_handler(self, msg_type, handler):
         """Add handler for a message type."""
@@ -152,7 +147,7 @@ class UpbPim:
                 self._heartbeat.cancel()
             self._heartbeat = self.loop.call_later(90, self._reset_connection)
         elif data == "~~ANOTHER_TCP_CLIENT_IS_CONNECTED":
-            self._connection_retry_timer = 60
+            self._connection_retry_time = 60
             LOG.warning("%s to ser2tcp, disconnecting", log_msg)
 
     def _connection_status_change(self, status):
@@ -190,18 +185,17 @@ class UpbPim:
 
     def connect(self, connected_callbk=None, connection_lost_callbk=None):
         """Connect to the panel"""
-        self._disconnect_requested = False
         asyncio.ensure_future(self._connect(connected_callbk, connection_lost_callbk))
 
     def disconnect(self):
         """Disconnect the connection from sending/receiving."""
-        self._disconnect_requested = True
+        self._connection_retry_time = -1  # Stop from reconnecting automatically
         if self._connection:
             self._connection.close()
             self._connection = None
-        if self._connection_retry_task:
-            self._connection_retry_task.cancel()
-            self._connection_retry_task = None
+        if self._reconnect_task:
+            self._reconnect_task.cancel()
+            self._reconnect_task = None
         if self._heartbeat:
             self._heartbeat.cancel()
             self._heartbeat = None
