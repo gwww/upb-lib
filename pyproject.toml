@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "upb-lib"
-version = "0.4.11"
+version = "0.4.12"
 description = "Library for interacting with UPB PIM."
 homepage = "https://github.com/gwww/upb-lib"
 authors = ["Glenn Waters <gwwaters+upb@gmail.com>"]
@@ -16,7 +16,7 @@ exclude = ["test"]
 [tool.poetry.dependencies]
 python = ">=3.7"
 pytz = ">=2019"
-pyserial-asyncio = "^0.4.0"
+pyserial-asyncio = ">= 0.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.3"
