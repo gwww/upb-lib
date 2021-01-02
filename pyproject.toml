@@ -29,5 +29,5 @@ black = ">= 20.8b1"
 min-similarity-lines = 8
 
 [build-system]
-requires = ["poetry>=1.0.0"]
+requires = ["poetry>=1.1.0"]
 build-backend = "poetry.masonry.api"
