@@ -14,18 +14,16 @@ include = ["CHANGELOG.md", "bin/**/*"]
 exclude = ["test"]
 
 [tool.poetry.dependencies]
-python = ">=3.7"
-pytz = ">=2019"
+python = ">= 3.7"
+pytz = ">= 2019"
 pyserial-asyncio = ">= 0.5"
 
 [tool.poetry.dev-dependencies]
-pytest = "^4.3"
-mock = "^2.0"
-pytest-mock = "^1.10"
-urwid = "^2.0"
-attrs = "^19.1"
-colorlog = "^4.0"
-black = "19.3b0"
+pytest = ">= 6"
+urwid = ">= 2.0"
+attrs = ">= 19"
+colorlog = ">= 4.0"
+black = ">= 20.8b1"
 
 [tool.pylint.SIMILARITIES]
 min-similarity-lines = 8
