@@ -4,13 +4,6 @@ import logging
 
 from .const import MINIMUM_BLINK_RATE, UpbCommand
 from .elements import Addr, Element, Elements
-from .message import (
-    encode_blink,
-    encode_fade_start,
-    encode_fade_stop,
-    encode_goto,
-    encode_report_state,
-)
 from .util import check_dim_params
 
 LOG = logging.getLogger(__name__)
@@ -57,7 +50,7 @@ class UpbDevice(Element):
 
         self._pim.send(encode_fn(self._addr, brightness, rate), False)
         if self._pim.flags.get("report_state"):
-            self._pim.send(encode_report_state(self._addr))
+            self._pim.send(self._pim.encoder.report_state(self._addr))
         self.setattr("status", brightness)
 
     @property
@@ -67,20 +60,20 @@ class UpbDevice(Element):
 
     def turn_on(self, brightness=100, rate=-1):
         """(Helper) Set device to specified level"""
-        self._level(brightness, rate, encode_goto)
+        self._level(brightness, rate, self._pim.encoder.goto)
 
     def turn_off(self, rate=-1):
         """(Helper) Turn device off."""
-        self._level(0, rate, encode_goto)
+        self._level(0, rate, self._pim.encoder.goto)
 
     def fade_start(self, brightness, rate=-1):
         """(Helper) Start fading a device."""
-        self._level(brightness, rate, encode_fade_start)
+        self._level(brightness, rate, self._pim.encoder.fade_start)
 
     def fade_stop(self):
         """(Helper) Stop fading a device."""
-        self._pim.send(encode_fade_stop(self._addr), False)
-        self._pim.send(encode_report_state(self._addr))
+        self._pim.send(self._pim.encoder.fade_stop(self._addr), False)
+        self._pim.send(self._pim.encoder.report_state(self._addr))
 
     def blink(self, rate=-1):
         """(Helper) Blink a device."""
@@ -88,14 +81,14 @@ class UpbDevice(Element):
             "unlimited_blink_rate"
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
-        self._pim.send(encode_blink(self._addr, rate), False)
+        self._pim.send(self._pim.encoder.blink(self._addr, rate), False)
         if self._pim.flags.get("report_state"):
-            self._pim.send(encode_report_state(self._addr))
+            self._pim.send(self._pim.encoder.report_state(self._addr))
         self.setattr("status", 100)
 
     def update_status(self):
         """(Helper) Get status of a device."""
-        self._pim.send(encode_report_state(self._addr))
+        self._pim.send(self._pim.encoder.report_state(self._addr))
 
 
 class UpbDevices(Elements):
@@ -118,7 +111,7 @@ class UpbDevices(Elements):
             device = self.elements[device_id]
             if device.addr.channel > 0:
                 continue
-            self.pim.send(encode_report_state(device.addr))
+            self.pim.send(self.pim.encoder.report_state(device.addr))
 
     def _device_state_report_handler(self, msg):
         status_length = len(msg.data)

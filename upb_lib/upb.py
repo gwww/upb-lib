@@ -8,7 +8,7 @@ import serial_asyncio
 
 from .devices import UpbAddr, UpbDevices
 from .links import Links
-from .message import MessageDecode
+from .message import MessageDecode, MessageEncode
 from .parse_upstart import process_upstart_file
 from .proto import Connection
 from .util import parse_flags, parse_url
@@ -22,12 +22,16 @@ class UpbPim:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, config, loop=None):
         """Initialize a new PIM instance."""
+        self.flags = parse_flags(config.get("flags", ""))
+        LOG.info("Using flags: %s", str(self.flags))
+        self._decoder = MessageDecode()
+        self.encoder = MessageEncode(self.flags.get("tx_count", 0))
+
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
         self._connection = None
         self._connection_retry_time = 1
         self._reconnect_task = None
-        self._message_decode = MessageDecode()
         self._sync_handlers = []
 
         self.devices = UpbDevices(self)
@@ -35,7 +39,6 @@ class UpbPim:
         self.config_ok = True
         self.network_id = None
         self.connected_callbk = None
-        self.flags = parse_flags(config.get("flags", ""))
 
         # Setup for all the types of elements tracked
         export_filepath = config.get("UPStartExportFile")
@@ -109,14 +112,14 @@ class UpbPim:
 
     def add_handler(self, msg_type, handler):
         """Add handler for a message type."""
-        self._message_decode.add_handler(msg_type, handler)
+        self._decoder.add_handler(msg_type, handler)
 
     def _got_data(self, data):  # pylint: disable=no-self-use
         try:
             if data[:2] == "~~":
                 self._handle_control_command(data)
             else:
-                self._message_decode.decode(data)
+                self._decoder.decode(data)
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
 
@@ -136,7 +139,7 @@ class UpbPim:
     def _connection_status_change(self, status):
         self.devices.connection_status_change(status)
         self.links.connection_status_change(status)
-        self._message_decode.call_handlers(status, {})
+        self._decoder.call_handlers(status, {})
 
     def _timeout(self, kind, addr):
         if kind == "PIM":
