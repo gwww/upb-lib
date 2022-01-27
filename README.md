@@ -44,6 +44,8 @@ are supported: `serial://<device>` where `<device>` is the serial/USB port on wh
 - `use_raw_rate`: By default the API takes the number of seconds as the rate in which to transition lights to their new level. The number of seconds is coverted to the closest rate value that UPB understands (see rate table below). For example, if a request is to transition a light to its new state in 8 seconds, the closest value that UPB supports is 6.6 seconds and that is the transition time that will be used. If the use raw rate flag is given on initializing this library then the rate value is assumed to be the UPB rate value. i.e.: not in seconds but is a value that UPB "understands".
 - `report_state`: By default the API does not ask for a state update from a device when issuing goto, fade start, or blink commands. Including this flag on startup of the library will cause a report state to be issued immediately following one of the mentioned state changing commands.
 - `no_sync`: By default when the library first starts a report state is sent to every device to synchronize the state of the UPB network with the library. This flag turns off the initial sync. This was put in place for debugging and is not expected to be used outside of that.
+- `heartbeat_timeout_sec`: Overrides the duration of idleness (no messages being received) after which the library will re-initialize the connection, possibly triggering a sync. Applies only to the `tcp` protocol, and defaults to 90 seconds. Setting the value to -1 disables this feature.
+- `tx_count`: The number of times every UPB message is transmitted (CNT portion of the control word). Defaults to 1. Setting the value to 2 may be required for networks that use a repeater.
 
 ## First use of the API
 
@@ -102,3 +104,13 @@ There is a `Makefile` in the root directory as well. The `make` command
 followed by one of the targets in the `Makefile` can be used. If you don't
 have or wish to use `make` the `Makefile` serves as examples of common
 commands that can be run.
+
+## Working with the UPB Protocol
+
+Useful information on the UPB protocol can be found in the following documents:
+  1. [UPB System Description](https://www.ipcf.org/doc/UPB_System_Description_v1.1.pdf)
+  1. [Powerline Interface Module Description](http://www.webmtn.com/webUniversity/upbDocs/PimComm1.6.pdf)
+
+Using [ser2net](https://linux.die.net/man/8/ser2net) to proxy and examine
+commands sent by [UpStart](https://pcswebstore.com/pages/upb-software) can also
+be insightful.

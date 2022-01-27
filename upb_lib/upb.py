@@ -25,7 +25,7 @@ class UpbPim:
         self.flags = parse_flags(config.get("flags", ""))
         LOG.info("Using flags: %s", str(self.flags))
         self._decoder = MessageDecode()
-        self.encoder = MessageEncode(self.flags.get("tx_count", 0))
+        self.encoder = MessageEncode(self.flags.get("tx_count", 1))
 
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
@@ -51,7 +51,7 @@ class UpbPim:
         url = self._config["url"]
         LOG.info("Connecting to UPB PIM at %s", url)
         scheme, dest, param = parse_url(url)
-        heartbeat_time = self.flags.get("heartbeat", 90) if scheme == "tcp" else -1
+        heartbeat_time = self.flags.get("heartbeat_timeout_sec", 90) if scheme == "tcp" else -1
         conn = partial(
             Connection,
             self.loop,
