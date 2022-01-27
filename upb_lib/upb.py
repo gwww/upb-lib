@@ -48,7 +48,7 @@ class UpbPim:
         url = self._config["url"]
         LOG.info("Connecting to UPB PIM at %s", url)
         scheme, dest, param = parse_url(url)
-        heartbeat_time = 90 if scheme == "tcp" else -1
+        heartbeat_time = self.flags.get("heartbeat", 90) if scheme == "tcp" else -1
         conn = partial(
             Connection,
             self.loop,
