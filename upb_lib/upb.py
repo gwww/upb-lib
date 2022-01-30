@@ -25,7 +25,7 @@ class UpbPim:
         self.flags = parse_flags(config.get("flags", ""))
         LOG.info("Using flags: %s", str(self.flags))
         self._decoder = MessageDecode()
-        self.encoder = MessageEncode(self.flags.get("tx_count", 1))
+        self.encoder = MessageEncode(config.get("tx_count", 1))
 
         self.loop = loop if loop else asyncio.get_event_loop()
         self._config = config
