@@ -83,15 +83,15 @@ class MessageEncode:
 
     def __init__(self, tx_count):
         """Initialize a new MessageEncode instance."""
-        # Value of 00 corresponds to 1 transmit.
-        self._tx_count = tx_count - 1
+        self.tx_count = tx_count
 
     def _create_control_word(self, link, repeater=0, ack=0):
         """Create a control word in UPB message."""
         ctl = (1 if link else 0) << 15
         ctl = ctl | (repeater << 13)
         ctl = ctl | (ack << 4)
-        ctl = ctl | (self._tx_count << 2)
+        # Value of 00 corresponds to 1 transmit.
+        ctl = ctl | (self.tx_count - 1 << 2)
         ctl = ctl | 0
         return ctl
 
