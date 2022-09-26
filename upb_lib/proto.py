@@ -20,10 +20,10 @@ PIM_TO_BE_READY = 3
 class _Packet:
     """Details about a packet being sent"""
 
-    def __init__(self, data, response, timeout, raw):
+    def __init__(self, command, data, response, timeout):
+        self.command = command
         self.data = data
         self.response = response
-        self.raw = raw
         self.timeout = timeout
         self.retry_count = PROTO_RETRY_COUNT
 
@@ -86,10 +86,10 @@ class Connection(asyncio.Protocol):
         """Restart the connection from sending/receiving."""
         self._paused = False
 
-    def write_data(self, data, response_required=True, timeout=5.0, raw=False):
+    def write_data(self, command, data, response_required=True, timeout=5.0):
         """Queue data and process the write queue."""
         response = data[4:8] if response_required else None
-        pkt = _Packet(data, response, timeout, raw)
+        pkt = _Packet(command, data, response, timeout)
         self._write_queue.append(pkt)
         LOG.debug("queued write '%s'", pkt.data)
         self._process_write_queue()
@@ -213,7 +213,7 @@ class Connection(asyncio.Protocol):
         self._awaiting = UPB_PACKET if pkt.response else PIM_RESPONSE_MESSAGE
 
         LOG.debug("write_data '%s'", pkt.data)
-        pim_command = "" if pkt.raw else PimCommand.TX_UPB_MSG.value
+        pim_command = pkt.command.value if pkt.command else ""
         self._transport.write(f"{pim_command}{pkt.data}\r".encode())
 
     def _done_with_write_queue_head(self):
