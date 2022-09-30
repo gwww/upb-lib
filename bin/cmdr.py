@@ -14,8 +14,8 @@ from importlib import import_module
 import attr
 import urwid
 
-import upb_lib.message
-
+from upb_lib.message import MessageDecode, MessageEncode
+from upb_lib.devices import UpbAddr
 
 @attr.s
 class Command:
@@ -99,17 +99,24 @@ class Commands:
         self._help_cmd = ["?", "help", "h"]
 
         self.encode_cmds = {}
-        for fn_name, fn in inspect.getmembers(upb_lib.message, inspect.isfunction):
-            if not fn_name.endswith("_encode"):
-                continue
-            cmd = fn_name[0:2]
+        for cmd, fn in inspect.getmembers(MessageEncode, inspect.isfunction):
+            if cmd.startswith("_"): continue
             params = [p for p in inspect.signature(fn).parameters]
+            params.pop(0) # 'self'
+            params[0] = "UpbAddr:str:'e.g. 1_21_0'"
             params = " ".join(["<" + p + ">" for p in params])
             self.encode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
+        self.decode_cmds = {}
+        for cmd, fn in inspect.getmembers(MessageDecode, inspect.isfunction):
+            if not cmd in ['decode', 'handle']: continue
+            params = [p for p in inspect.signature(fn).parameters]
+            params = "<hex_command:str:'e.g. 07000144FF3085'>"
+            self.decode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
+
 
         self.element_cmds = {}
         self.subcommands = {}
-        for element in ["lights", "links"]:
+        for element in ["devices", "links"]:
             if element == "panel":
                 fn = self.panel_print
                 cmd = element
@@ -139,8 +146,8 @@ class Commands:
         if cmd in self.encode_cmds:
             return self.encoder(cmd, args)
 
-        if cmd == "recv":
-            return self.pim._got_data(" ".join(args))
+        if cmd in self.decoder_cmds:
+            return self.decoder(cmd, args)
 
         if cmd in self.element_cmds:
             return self.element_cmds[cmd][0](cmd, args)
@@ -151,25 +158,29 @@ class Commands:
         if len(args) == 0:
             res = '#green#Type "[?|h|help] <command>" to get more help\n'
             res += 'Type "[q|quit|exit]" to quit program\n'
-            res += "Element display commands:\n  {}\n\n".format(
+            res += "Element display commands:\n  {}\n".format(
                 " ".join(list(self.element_cmds.keys()))
             )
             cl = [fnname for fnname in self.encode_cmds]
             res += "Send message commands:\n  {}\n".format(" ".join(sorted(cl)))
-        else:
-            help_for = args[0]
-            if help_for in self.encode_cmds:
-                command = self.encode_cmds[help_for]
-                res = "#green#{}\n{}".format(command.help, command.docs)
+            cl = [fnname for fnname in self.decode_cmds]
+            res += "Receive message commands:\n  {}\n".format(" ".join(sorted(cl)))
+            return res
 
-            elif help_for in self.element_cmds:
-                res = "#green#{}\n{}".format(
-                    self.element_cmds[help_for][1], self.element_cmds[help_for][2]
-                )
-                for k, v in self.element_cmds[help_for][3].items():
-                    res += "\nSubcommand: {}\n{}".format(v[1], v[2])
-            else:
-                res = "#error#Unknown command: {}".format(help_for)
+        help_for = args[0]
+        for cmd_list in [self.encode_cmds, self.decode_cmds]:
+            if help_for in cmd_list:
+                command = cmd_list[help_for]
+                return "#green#{}\n{}".format(command.help, command.docs)
+
+        if help_for not in self.element_cmds:
+            return "#error#Unknown command: {}".format(help_for)
+
+        res = "#green#{}\n{}".format(
+            self.element_cmds[help_for][1], self.element_cmds[help_for][2]
+        )
+        for k, v in self.element_cmds[help_for][3].items():
+            res += "\nSubcommand: {}\n{}".format(v[1], v[2])
         return res
 
     def print_elements(self, cmd, args):
@@ -191,14 +202,18 @@ class Commands:
         print(self.pim.panel)
 
     def encoder(self, cmd, args):
-        converted = []
-        for arg in args:
+        params = [self.pim.encoder, UpbAddr.parse(args[0])]
+        for arg in args[1:]:
             try:
                 i = int(arg)
-                converted.append(i)
+                params.append(i)
             except ValueError:
-                converted.append(arg)
-        self.pim.send(self.encode_cmds[cmd].function(*converted))
+                params.append(arg)
+        self.pim.send(self.encode_cmds[cmd].function(*params))
+
+    def decoder(self, cmd, args):
+        params = [self.pim._decoder, bytearray.fromhex(args[0])]
+        return self.decode_cmds[cmd].function(*params)
 
 
 class FocusMixin(object):

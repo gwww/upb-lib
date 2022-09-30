@@ -1,18 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
-import asyncio
-import io
 import logging
 import os
 import sys
-import textwrap
-import traceback
 
 import cmdr
 from upb_lib import UpbPim
-from upb_lib.const import Max
-from upb_lib.message import MessageEncode
 
 LOG = logging.getLogger(__name__)
 
@@ -55,6 +49,10 @@ def parse_args():
             help=("R|URL to connect to in one of the following formats:\n"
                  "  tcp://host[:port] -- connect to PIM over Ethernet\n"
                  "  serial://port[:baud] -- connect to PIM over serial port\n"))
+    parser.add_argument('-x', '--tx_count', type=int, action='store', dest='tx_count',
+            help=("The number of times every UPB message is transmitted.\n"))
+    parser.add_argument('-f', '--flags', action='store', dest='flags',
+            help=("A comma separated list of key=value flags to pass to the PIM.\n"))
 
     results = parser.parse_args()
     return results
@@ -66,24 +64,28 @@ def main():
     url = args.url if args.url else os.environ.get('UPBPIM_URL')
     if url:
         config['url'] = url
-    config['UPStartFileExport'] = 'bin/upb.upe'
+    if args.tx_count:
+        config['tx_count'] = args.tx_count
+    if args.flags:
+        config['flags'] = args.flags
+    config['UPStartExportFile'] = 'bin/upb.upe'
 
     pim = UpbPim(config)
 
+    stream = sys.stdout
     if args.interactive:
-        c=cmdr.Commander('PIM console', cmd_cb=cmdr.Commands(pim))
-        mystdout = StdOutWrapper(c)
-        logging.basicConfig(stream=mystdout,
-                            level=logging.DEBUG, format='%(message)s')
-    else:
-        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+        console = cmdr.Commander('PIM console', cmd_cb=cmdr.Commands(pim))
+        stream = StdOutWrapper(console)
+    logging.basicConfig(stream=stream,
+                        format='%(levelname)s: %(message)s',
+                        level=logging.DEBUG)
 
     try:
         # pim.add_handler('unknown', _unknown_handler)
         # pim.add_handler('timeout', _timeout_handler)
         pim.connect()
         if args.interactive:
-            c.loop()
+            console.loop()
         else:
             pim.run()
     except KeyboardInterrupt:
