@@ -146,7 +146,7 @@ class Commands:
         if cmd in self.encode_cmds:
             return self.encoder(cmd, args)
 
-        if cmd in self.decoder_cmds:
+        if cmd in self.decode_cmds:
             return self.decoder(cmd, args)
 
         if cmd in self.element_cmds:
