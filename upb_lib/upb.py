@@ -119,7 +119,7 @@ class UpbPim:
             if data[:2] == "~~":
                 self._handle_control_command(data)
             else:
-                self._decoder.decode(data)
+                self._decoder.handle(data)
         except (ValueError, AttributeError) as err:
             LOG.debug(err)
 

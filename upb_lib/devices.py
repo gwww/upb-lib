@@ -28,6 +28,12 @@ class UpbAddr(Addr):
         """Is address part of multi-channel device."""
         return self._multi_channel
 
+    @staticmethod
+    def parse(str_form):
+        """Parses an index string into a UpbAddr instance."""
+        parts = str_form.split('_')
+        return UpbAddr(int(parts[0]), int(parts[1]), int(parts[2]))
+
 
 class UpbDevice(Element):
     """Class representing a UPB device."""

@@ -42,9 +42,9 @@ class MessageDecode:
             else:
                 handler(message)
 
-    def decode(self, msg):
+    def decode(self, msg) -> Message:
         """
-        Decode an UPB message
+        Decode and return a UPB message
 
         ASCII Message format: PPCCCCNNDDSSMM...KK
 
@@ -62,7 +62,7 @@ class MessageDecode:
             raise ValueError("UPB message less than 12 characters")
 
         control = int.from_bytes(msg[0:2], byteorder="big")
-        message = Message(
+        return Message(
             link=(control & 0x8000) != 0,
             repeater_req=(control >> 13) & 3,
             length=(control >> 8) & 31,
@@ -75,6 +75,10 @@ class MessageDecode:
             msg_id=msg[5],
             data=msg[6:],
         )
+
+    def handle(self, msg):
+        """ Decode a UPB message, and invoke appropriate handlers """
+        message = self.decode(msg)
         self.call_handlers(message.msg_id, message)
 
 
