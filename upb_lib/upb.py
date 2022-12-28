@@ -6,6 +6,7 @@ from functools import partial
 
 import serial_asyncio
 
+from .const import PimCommand
 from .devices import UpbAddr, UpbDevices
 from .links import Links
 from .message import MessageDecode, MessageEncode
@@ -97,7 +98,11 @@ class UpbPim:
         # The intention of this is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This too will
         # return an error, but hopefully resets the PIM
-        self.send("", response_required=False, raw=True)
+        self.send("", response_required=False, command=None)
+        # Ensure we're in "message" (and not "pulse") mode.
+        # See PCS PIM Protocol 2.2.3
+        self.send("70028E", response_required=False,
+                  command=PimCommand.WRITE_PIM_REGISTERS)
 
         if self.flags.get("no_sync"):
             LOG.warning("Initial device sync turned off")
@@ -188,10 +193,11 @@ class UpbPim:
         """Enter the asyncio loop."""
         self.loop.run_forever()
 
-    def send(self, msg, response_required=True, raw=False):
+    def send(self, msg, response_required=True,
+             command=PimCommand.TX_UPB_MSG):
         """Send a message to UPB PIM."""
         if self._connection:
-            self._connection.write_data(msg, response_required, raw=raw)
+            self._connection.write_data(command, msg, response_required)
 
     def pause(self):
         """Pause the connection from sending/receiving."""
