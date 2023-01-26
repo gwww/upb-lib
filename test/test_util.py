@@ -63,4 +63,4 @@ def test_seconds_to_rate():
     assert seconds_to_rate(1.21) == 2
     assert seconds_to_rate(45) == 8
     assert seconds_to_rate(45.1) == 9
-    assert seconds_to_rate(10000) == 13
+    assert seconds_to_rate(10000) == 15

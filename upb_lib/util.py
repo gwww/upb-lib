@@ -4,7 +4,7 @@ import re
 
 
 # Array for converting seconds to a rate (aka transition) length
-SECONDS_TO_RATE = [0, 0.8, 1.6, 3.3, 5, 6.6, 10, 20, 30, 60, 120, 600, 1800, 3600]
+SECONDS_TO_RATE = [0, 0.8, 1.6, 3.3, 5, 6.6, 10, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
 
 
 def seconds_to_rate(seconds):
