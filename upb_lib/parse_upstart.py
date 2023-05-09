@@ -5,8 +5,9 @@ Parse UPStart file and create UPB device/link objects
 import logging
 
 from .const import MANUFACTURERS, PRODUCTS
-from .devices import UpbDevice, UpbAddr
+from .devices import UpbAddr, UpbDevice
 from .links import DeviceLink, Link, LinkAddr
+from .util import parse_flags
 
 LOG = logging.getLogger(__name__)
 
@@ -38,6 +39,8 @@ def _process_file(pim, file):
             _channel_definition_record(pim, network_id, fields)
         elif fields[0] == "4":
             _link_device_definition_record(pim, network_id, fields)
+        elif fields[0] == "98":
+            _custom_flags_record(pim, ",".join(fields[1:]))
         elif fields[0] == "99":
             _rename_device_record(pim, fields)
 
@@ -95,3 +98,7 @@ def _rename_device_record(pim, fields):
     device = pim.devices.elements.get(fields[1])
     if device:
         device.name = fields[2]
+
+
+def _custom_flags_record(pim, flags):
+    pim.flags = parse_flags(flags)
