@@ -4,7 +4,7 @@ import asyncio
 import logging
 from functools import partial
 
-import serial_asyncio
+import serial_asyncio_fast
 
 from .const import PimCommand
 from .devices import UpbAddr, UpbDevices
@@ -64,7 +64,7 @@ class UpbPim:
         )
         try:
             if scheme == "serial":
-                await serial_asyncio.create_serial_connection(
+                await serial_asyncio_fast.create_serial_connection(
                     self.loop, conn, dest, baudrate=param
                 )
             else:
