@@ -37,22 +37,29 @@ class UpbPim:
 
         self.devices = UpbDevices(self)
         self.links = Links(self)
-        self.config_ok = True
+        self.config_ok = False
         self.network_id = None
         self.connected_callbk = None
 
-        # Setup for all the types of elements tracked
-        export_filepath = config.get("UPStartExportFile")
-        if export_filepath:
-            self.config_ok = process_upstart_file(self, config["UPStartExportFile"])
-
     async def _connect(self, connected_callbk=None):
         """Asyncio connection to UPB."""
+
+        if not self.config_ok:
+            # Setup for all the types of elements tracked
+            export_filepath = self._config.get("UPStartExportFile")
+            if export_filepath:
+                # Load config from the UPStart file (run in executor to avoid blocking IO)
+                self.config_ok = await asyncio.get_running_loop().run_in_executor(
+                    None, process_upstart_file, self, export_filepath
+                )
+
         self.connected_callbk = connected_callbk
         url = self._config["url"]
         LOG.info("Connecting to UPB PIM at %s", url)
         scheme, dest, param = parse_url(url)
-        heartbeat_time = self.flags.get("heartbeat_timeout_sec", 90) if scheme == "tcp" else -1
+        heartbeat_time = (
+            self.flags.get("heartbeat_timeout_sec", 90) if scheme == "tcp" else -1
+        )
         conn = partial(
             Connection,
             self.loop,
@@ -101,8 +108,9 @@ class UpbPim:
         self.send("", response_required=False, command=None)
         # Ensure we're in "message" (and not "pulse") mode.
         # See PCS PIM Protocol 2.2.3
-        self.send("70028E", response_required=False,
-                  command=PimCommand.WRITE_PIM_REGISTERS)
+        self.send(
+            "70028E", response_required=False, command=PimCommand.WRITE_PIM_REGISTERS
+        )
 
         if self.flags.get("no_sync"):
             LOG.warning("Initial device sync turned off")
@@ -193,8 +201,7 @@ class UpbPim:
         """Enter the asyncio loop."""
         self.loop.run_forever()
 
-    def send(self, msg, response_required=True,
-             command=PimCommand.TX_UPB_MSG):
+    def send(self, msg, response_required=True, command=PimCommand.TX_UPB_MSG):
         """Send a message to UPB PIM."""
         if self._connection:
             self._connection.write_data(command, msg, response_required)
