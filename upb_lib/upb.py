@@ -184,8 +184,12 @@ class UpbPim:
         return self._connection is not None and not self._connection.is_paused()
 
     def connect(self, connected_callbk=None):
-        """Connect to the panel"""
+        """Connect to the PIM"""
         asyncio.ensure_future(self._connect(connected_callbk))
+
+    async def async_connect(self, connected_callbk=None):
+        """Connect to the PIM"""
+        await self._connect(connected_callbk)
 
     def disconnect(self):
         """Disconnect the connection from sending/receiving."""
