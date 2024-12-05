@@ -52,6 +52,8 @@ class UpbPim:
                 self.config_ok = await asyncio.get_running_loop().run_in_executor(
                     None, process_upstart_file, self, export_filepath
                 )
+                if self.flags.get("tx_count"):
+                    self.encoder.tx_count = self.flags["tx_count"]
 
         self.connected_callbk = connected_callbk
         url = self._config["url"]

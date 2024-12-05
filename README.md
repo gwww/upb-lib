@@ -47,6 +47,7 @@ are supported: `serial://<device>` where `<device>` is the serial/USB port on wh
 - `report_state`: By default the API does not ask for a state update from a device when issuing goto, fade start, or blink commands. Including this flag on startup of the library will cause a report state to be issued immediately following one of the mentioned state changing commands.
 - `no_sync`: By default when the library first starts a report state is sent to every device to synchronize the state of the UPB network with the library. This flag turns off the initial sync. This was put in place for debugging and is not expected to be used outside of that.
 - `heartbeat_timeout_sec`: Overrides the duration of idleness (no messages being received) after which the library will re-initialize the connection, possibly triggering a sync. Applies only to the `tcp` protocol, and defaults to 90 seconds. Setting the value to -1 disables this feature.
+- `tx_count`: See `tx_count` description above.
 
 ## First use of the API
 
