@@ -1,5 +1,6 @@
 """Utility functions"""
 
+import contextlib
 import re
 
 # Array for converting seconds to a rate (aka transition) length
@@ -67,7 +68,7 @@ def parse_url(url):
     elif scheme == "serial":
         host, port = dest.split(":") if ":" in dest else (dest, 4800)
     else:
-        raise ValueError("Invalid scheme '%s'" % scheme)
+        raise ValueError(f"Invalid scheme '{scheme}'")
     return (scheme, host, int(port))
 
 
@@ -80,9 +81,7 @@ def parse_flags(flags):
         if len(flag) == 1:
             return_value[flag[0]] = True
         elif len(flag) == 2:
-            try:
+            with contextlib.suppress(ValueError):
                 flag[1] = int(flag[1])
-            except ValueError:
-                pass
             return_value[flag[0]] = flag[1]
     return return_value
