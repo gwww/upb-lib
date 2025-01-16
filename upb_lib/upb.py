@@ -130,7 +130,7 @@ class UpbPim:
         """Add handler for a message type."""
         self._decoder.add_handler(msg_type, handler)
 
-    def _got_data(self, data):  # pylint: disable=no-self-use
+    def _got_data(self, data):
         try:
             if data[:2] == "~~":
                 self._handle_control_command(data)

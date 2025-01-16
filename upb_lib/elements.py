@@ -94,6 +94,7 @@ class Element:
             for (k, v) in vars(self).items()
             if not k.startswith("_") and k != "name"
         }.items()
+        # pylint: disable=consider-using-f-string
         varstr = " ".join("{}:{}".format(*item) for item in varlist)
         return f"{self._index} '{self.name}' {varstr}"
 
