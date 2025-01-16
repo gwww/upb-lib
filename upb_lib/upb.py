@@ -48,7 +48,8 @@ class UpbPim:
             # Setup for all the types of elements tracked
             export_filepath = self._config.get("UPStartExportFile")
             if export_filepath:
-                # Load config from the UPStart file (run in executor to avoid blocking IO)
+                # Load config from the UPStart file
+                # (run in executor to avoid blocking IO)
                 self.config_ok = await asyncio.get_running_loop().run_in_executor(
                     None, process_upstart_file, self, export_filepath
                 )

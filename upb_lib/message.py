@@ -13,7 +13,7 @@ PIM_ID = 0xFF
 
 Message = namedtuple(
     "Message",
-    "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",
+    "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",  # noqa: E501
 )
 
 
