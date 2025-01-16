@@ -1,6 +1,6 @@
 [project]
 name = "upb-lib"
-version = "0.5.9"
+version = "0.5.10"
 description = "Library for interacting with UPB PIM."
 readme = "README.md"
 requires-python = ">= 3.11"
