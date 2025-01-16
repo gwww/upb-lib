@@ -56,6 +56,7 @@ Read the code in `bin/simple`. That is the short use of the API around. Beyond t
 ## Usage
 
 ### Naming
+
 UPB device name are a concatenation of the UPB network ID, the UPB device ID, and the channel number of the device. An underscore separates the values. For example, for a single channel UPB device number 42 on UPB network 142 the device name used in the library would be `"142_42_0"`. For a multi-channel device the channel numbers start at 0.
 
 UPB Links are named as a concatenation of the UPB network ID and the link number. For example, link number 6 on UPB network 142 would be `"142_6"`.
@@ -63,6 +64,7 @@ UPB Links are named as a concatenation of the UPB network ID and the link number
 See `bin/simple` for example code.
 
 ### Transition Rate
+
 Many UPB commands take a `rate`. This API supports the rate as a number of seconds, which is different than what the protocol uses. The protocol allows a set of distinct rates, listed below. For example in the UPB protocol if the rate 7 is sent to a device then the fade rate (for example) would be 20 seconds.
 
 Since the API takes a value in seconds and any number of seconds can be specified, what the API does is convert the number of seconds to the closest rate. For example, if a rate of 24 seconds is passed to the API then the API will convert that to the nearest protocol rate value, which in this case is 7.
@@ -110,9 +112,37 @@ commands that can be run.
 ## Working with the UPB Protocol
 
 Useful information on the UPB protocol can be found in the following documents:
-  1. [UPB System Description](https://www.ipcf.org/doc/UPB_System_Description_v1.1.pdf)
-  1. [Powerline Interface Module Description](http://www.webmtn.com/webUniversity/upbDocs/PimComm1.6.pdf)
+
+1. [UPB System Description](https://www.ipcf.org/doc/UPB_System_Description_v1.1.pdf)
+1. [Powerline Interface Module Description](http://www.webmtn.com/webUniversity/upbDocs/PimComm1.6.pdf)
 
 Using [ser2net](https://linux.die.net/man/8/ser2net) to proxy and examine
 commands sent by [UpStart](https://pcswebstore.com/pages/upb-software) can also
 be insightful.
+
+## Reporting a Bug
+
+No problem ;) — report the bugs! But, logs are most often required. If you
+are using Home Assistant, which is about the only use I'm aware of for
+this library, then add the following to your `configuration.yaml`:
+
+```
+logger:
+  default: info
+  logs:
+    custom_components.upb: debug
+    upb_lib: debug
+```
+
+Do everything in your power to trim to logs down to their smallest. One way is
+to reproduce your problem quickly so that few other logs are not generated in
+between. Another recommendation is to use the simplest configuration that you
+can think of to reproduce the problem.
+
+Can you reproduce the problem in other ways? If this is a problem that is
+being experienced while using Home Assistant try using the `Services` in `Developer Tools`.
+
+Sometime logs may have sensitive information in them. You may want to
+scan your logs for that info and "X" it out. In addition, you can send logs
+directly to me. Support email is in the `pyproject.toml` file. You may also
+send a link to somewhere you've stored/shared the file (DropBox for example).
