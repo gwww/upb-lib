@@ -1,4 +1,5 @@
 """Definition of an link (scene)"""
+
 import logging
 from collections import namedtuple
 from time import time
@@ -66,7 +67,9 @@ class Link(Element):
         brightness, rate = check_dim_params(
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
-        self._pim.send(self._pim.encoder.fade_start(self._addr, brightness, rate), False)
+        self._pim.send(
+            self._pim.encoder.fade_start(self._addr, brightness, rate), False
+        )
         self.update_device_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):

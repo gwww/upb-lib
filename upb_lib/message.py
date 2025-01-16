@@ -2,7 +2,6 @@
 UPB message encode/decode.
 """
 
-
 import logging
 from collections import namedtuple
 from functools import reduce
@@ -77,7 +76,7 @@ class MessageDecode:
         )
 
     def handle(self, msg):
-        """ Decode a UPB message, and invoke appropriate handlers """
+        """Decode a UPB message, and invoke appropriate handlers"""
         message = self.decode(msg)
         self.call_handlers(message.msg_id, message)
 

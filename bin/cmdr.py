@@ -17,6 +17,7 @@ import urwid
 from upb_lib.message import MessageDecode, MessageEncode
 from upb_lib.devices import UpbAddr
 
+
 @attr.s
 class Command:
     function = attr.ib()
@@ -100,19 +101,20 @@ class Commands:
 
         self.encode_cmds = {}
         for cmd, fn in inspect.getmembers(MessageEncode, inspect.isfunction):
-            if cmd.startswith("_"): continue
+            if cmd.startswith("_"):
+                continue
             params = [p for p in inspect.signature(fn).parameters]
-            params.pop(0) # 'self'
+            params.pop(0)  # 'self'
             params[0] = "UpbAddr:str:'e.g. 1_21_0'"
             params = " ".join(["<" + p + ">" for p in params])
             self.encode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
         self.decode_cmds = {}
         for cmd, fn in inspect.getmembers(MessageDecode, inspect.isfunction):
-            if not cmd in ['decode', 'handle']: continue
+            if not cmd in ["decode", "handle"]:
+                continue
             params = [p for p in inspect.signature(fn).parameters]
             params = "<hex_command:str:'e.g. 07000144FF3085'>"
             self.decode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
-
 
         self.element_cmds = {}
         self.subcommands = {}
@@ -261,7 +263,7 @@ class Input(FocusMixin, urwid.Edit):
                 urwid.emit_signal(self, "line_entered", line)
                 self.history.append(line)
             self._history_index = len(self.history)
-            self.edit_text = u""
+            self.edit_text = ""
         if key == "up":
             self._history_index -= 1
             if self._history_index < 0:
@@ -272,7 +274,7 @@ class Input(FocusMixin, urwid.Edit):
             self._history_index += 1
             if self._history_index >= len(self.history):
                 self._history_index = len(self.history)
-                self.edit_text = u""
+                self.edit_text = ""
             else:
                 self.edit_text = self.history[self._history_index]
         else:
@@ -281,10 +283,10 @@ class Input(FocusMixin, urwid.Edit):
 
 class Commander(urwid.Frame):
     """Simple terminal UI with command input on bottom line and display
-       frame above similar to chat client etc. Initialize with your
-       Command instance to execute commands and the start main loop
-       Commander.loop(). You can also asynchronously output messages
-       with Commander.output('message') """
+    frame above similar to chat client etc. Initialize with your
+    Command instance to execute commands and the start main loop
+    Commander.loop(). You can also asynchronously output messages
+    with Commander.output('message')"""
 
     class Exit(object):
         pass

@@ -31,7 +31,7 @@ class UpbAddr(Addr):
     @staticmethod
     def parse(str_form):
         """Parses an index string into a UpbAddr instance."""
-        parts = str_form.split('_')
+        parts = str_form.split("_")
         return UpbAddr(int(parts[0]), int(parts[1]), int(parts[2]))
 
 
