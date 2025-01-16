@@ -1,33 +1,91 @@
-[tool.poetry]
+[project]
 name = "upb-lib"
 version = "0.5.9"
 description = "Library for interacting with UPB PIM."
-homepage = "https://github.com/gwww/upb-lib"
-authors = ["Glenn Waters <gwwaters+upb@gmail.com>"]
 readme = "README.md"
-license = "MIT"
+requires-python = ">= 3.11"
+authors = [{name = "Glenn Waters", email = "gwwaters+upb-lib@gmail.com"}]
 classifiers = [
-  'Development Status :: 4 - Beta',
-  'Intended Audience :: Developers',
+  'Development Status :: 5 - Production/Stable',
+  "Intended Audience :: Developers",
+  "Topic :: Home Automation",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
-include = ["CHANGELOG.md", "bin/**/*"]
-exclude = ["test"]
+dependencies = [
+    "pyserial-asyncio-fast >= 0.11",
+    "pytz >= 2021",
+]
 
-[tool.poetry.dependencies]
-python = ">= 3.11"
-pytz = ">= 2021"
-pyserial-asyncio-fast = ">= 0.11"
+[tool.uv]
+dev-dependencies = [
+    "attrs >=24",
+    "colorlog >=6.8",
+    "mypy >=1.11",
+    "pylint >=3.2",
+    "urwid ==2.1.2",
+    "pytest >=8.3",
+    "pytest-asyncio >=0.23",
+    "ruff >=0.9.1",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = ">= 7.2"
-urwid = ">= 2.0"
-attrs = ">= 21.2"
-colorlog = ">= 4.0"
-black = ">= 24.3"
-
-[tool.pylint.SIMILARITIES]
-min-similarity-lines = 8
+[project.urls]
+Homepage = "https://github.com/gwww/upb-lib"
+Repository = "https://github.com/gwww/upb-lib.git"
+Issues = "https://github.com/gwww/upb-lib/issues"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "format",  # Handled by black
+    "abstract-method",  # With intro of async there are always methods missing
+    "cyclic-import",  # Doesn't test if both import on load
+    "duplicate-code",  # Unavoidable
+    "inconsistent-return-statements",  # Doesn't handle raise
+    "locally-disabled",  # It spams too much
+    "not-context-manager",
+    "too-few-public-methods",
+    "too-many-ancestors",  # Too strict
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "too-many-boolean-expressions",
+    "unused-argument",  # Generic callbacks and setup methods create a lot of warnings
+]
+enable = [
+    #"useless-suppression",  # temporarily every now and then to clean them up
+    "use-symbolic-message-instead",
+]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[tool.pyright]
+pythonVersion = "3.11"
+
+# Handled by ruff...
+reportUndefinedVariable = false
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "I",    # isort
+]
