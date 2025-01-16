@@ -99,8 +99,8 @@ To get started developing:
 ```
 git clone https://github.com/gwww/upb-lib.git
 cd upb
-poetry install
-poetry shell # Or activate the created virtual environment
+uv sync
+# Activate the created virtual environment according to the shell you are using.
 make test # to ensure everything installed properly
 ```
 
