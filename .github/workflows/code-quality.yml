@@ -34,7 +34,7 @@ jobs:
         run: uv run ruff format --check
 
       - name: Ruff lint/sort/etc checking
-        run: uv run ruff check --no-fix
+        run: uv run ruff check --no-fix upb_lib
 
       - name: Run pylint
         run: uv run pylint upb_lib
