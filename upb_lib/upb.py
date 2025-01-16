@@ -81,7 +81,7 @@ class UpbPim:
                     self.loop.create_connection(conn, host=dest, port=param, ssl=None),
                     timeout=5,
                 )
-        except (ValueError, OSError, asyncio.TimeoutError) as err:
+        except (TimeoutError, ValueError, OSError) as err:
             LOG.warning(
                 "Could not connect to UPB PIM (%s). Retrying in %d seconds",
                 err,

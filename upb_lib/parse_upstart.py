@@ -19,7 +19,7 @@ def process_upstart_file(pim, filename):
             _process_file(pim, file_handle)
             file_handle.close()
         return True
-    except EnvironmentError as exc:
+    except OSError as exc:
         LOG.error("Cannot open UPStart file: %s", exc)
         return False
 

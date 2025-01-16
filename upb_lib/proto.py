@@ -3,8 +3,6 @@
 import asyncio
 import logging
 
-from .const import PimCommand
-
 LOG = logging.getLogger(__name__)
 PIM_BUSY_TIMEOUT = 0.10
 PROTO_RETRY_COUNT = 1

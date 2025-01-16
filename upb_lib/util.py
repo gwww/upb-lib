@@ -2,7 +2,6 @@
 
 import re
 
-
 # Array for converting seconds to a rate (aka transition) length
 SECONDS_TO_RATE = [
     0,
