@@ -1,33 +1,29 @@
-.PHONY: install clean isort lint debug test
+.PHONY: clean setup format check lint run status status
 
 clean:
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -rf {} +
 	find . -name '.cache' -exec rm -rf {} +
+	find . -name '.mypy_cache' -exec rm -rf {} +
 	find . -name '.pytest_cache' -exec rm -rf {} +
+	find . -name '.ruff_cache' -exec rm -rf {} +
 	rm -rf build dist *.egg-info
 
-install:
-	poetry install
+setup:
+	uv sync
 
-build:
-	poetry build
+format:
+	ruff format
 
-upload.test: build
-	poetry publish --repository test.pypi.org
-
-upload: build install
-	poetry publish
-
-isort:
-	sh -c "isort --skip-glob=.tox --recursive . "
+check:
+	ruff check --no-fix
 
 lint:
 	pylint --msg-template='{msg_id}({symbol}):{line:3d},{column}: {obj}: {msg}' upb_lib
 
 run:
-	bin/simple
+	bin/upb -i
 
 test:
 	pytest
