@@ -1,5 +1,5 @@
 """
-  Base of the UpbDevice and link elements.
+Base of the UpbDevice and link elements.
 """
 
 
@@ -94,8 +94,9 @@ class Element:
             for (k, v) in vars(self).items()
             if not k.startswith("_") and k != "name"
         }.items()
-        varstr = " ".join("%s:%s" % item for item in varlist)
-        return "{} '{}' {}".format(self._index, self.name, varstr)
+        # pylint: disable=consider-using-f-string
+        varstr = " ".join("{}:{}".format(*item) for item in varlist)
+        return f"{self._index} '{self.name}' {varstr}"
 
     def as_dict(self):
         """Package up the public attributes as a dict."""
@@ -125,8 +126,7 @@ class Elements:
         raise NotImplementedError()
 
     def __iter__(self):
-        for element in self.elements:
-            yield element
+        yield from self.elements
 
     def __getitem__(self, key):
         return self.elements.get(key)

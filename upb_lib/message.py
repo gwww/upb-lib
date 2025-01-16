@@ -2,7 +2,6 @@
 UPB message encode/decode.
 """
 
-
 import logging
 from collections import namedtuple
 from functools import reduce
@@ -14,7 +13,7 @@ PIM_ID = 0xFF
 
 Message = namedtuple(
     "Message",
-    "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",
+    "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",  # noqa: E501
 )
 
 
@@ -77,7 +76,7 @@ class MessageDecode:
         )
 
     def handle(self, msg):
-        """ Decode a UPB message, and invoke appropriate handlers """
+        """Decode a UPB message, and invoke appropriate handlers"""
         message = self.decode(msg)
         self.call_handlers(message.msg_id, message)
 

@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  DEFAULT_UV: "0.5.20"
+
+jobs:
+  check-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4.1.7
+
+      - name: Set up uv
+        run: curl -LsSf https://astral.sh/uv/${{ env.DEFAULT_UV }}/install.sh | sh
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create venv and install
+        run: uv sync --all-extras --dev
+
+      - name: Check formatting
+        run: uv run ruff format --check
+
+      - name: Ruff lint/sort/etc checking
+        # TODO: ruff check rest of code outside of upb-lib
+        run: uv run ruff check --no-fix upb_lib
+
+      - name: Run pylint
+        run: uv run pylint upb_lib
+
+      # - name: Check typing
+      #   run: uv run mypy --show-error-codes --strict upb_lib
+
+      - name: Run pytest
+        run: uv run pytest test

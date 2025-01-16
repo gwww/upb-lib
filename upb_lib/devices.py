@@ -31,7 +31,7 @@ class UpbAddr(Addr):
     @staticmethod
     def parse(str_form):
         """Parses an index string into a UpbAddr instance."""
-        parts = str_form.split('_')
+        parts = str_form.split("_")
         return UpbAddr(int(parts[0]), int(parts[1]), int(parts[2]))
 
 
@@ -113,7 +113,7 @@ class UpbDevices(Elements):
 
     def sync(self):
         """Sync handler for devices."""
-        for device_id in self.elements:
+        for device_id in self.elements:  # pylint: disable=consider-using-dict-items
             device = self.elements[device_id]
             if device.addr.channel > 0:
                 continue
@@ -147,7 +147,6 @@ class UpbDevices(Elements):
                 "(GOTO) Device %s/%s level %d", device.name, device.index, device.status
             )
 
-    # pylint: disable=no-self-use
     def _register_values_report_handler(self, msg):
         data = msg.data
         if len(data) != 17:

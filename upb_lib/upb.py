@@ -48,7 +48,8 @@ class UpbPim:
             # Setup for all the types of elements tracked
             export_filepath = self._config.get("UPStartExportFile")
             if export_filepath:
-                # Load config from the UPStart file (run in executor to avoid blocking IO)
+                # Load config from the UPStart file
+                # (run in executor to avoid blocking IO)
                 self.config_ok = await asyncio.get_running_loop().run_in_executor(
                     None, process_upstart_file, self, export_filepath
                 )
@@ -81,7 +82,7 @@ class UpbPim:
                     self.loop.create_connection(conn, host=dest, port=param, ssl=None),
                     timeout=5,
                 )
-        except (ValueError, OSError, asyncio.TimeoutError) as err:
+        except (TimeoutError, ValueError, OSError) as err:
             LOG.warning(
                 "Could not connect to UPB PIM (%s). Retrying in %d seconds",
                 err,
@@ -129,7 +130,7 @@ class UpbPim:
         """Add handler for a message type."""
         self._decoder.add_handler(msg_type, handler)
 
-    def _got_data(self, data):  # pylint: disable=no-self-use
+    def _got_data(self, data):
         try:
             if data[:2] == "~~":
                 self._handle_control_command(data)
