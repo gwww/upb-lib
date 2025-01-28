@@ -44,12 +44,12 @@ class Link(Element):
 
     def activate(self):
         """(Helper) Activate link"""
-        self._pim.send(self._pim.encoder.activate_link(self._addr), False)
+        self._pim.send(self._pim.encoder.activate_link(self._addr))
         self.update_device_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
-        self._pim.send(self._pim.encoder.deactivate_link(self._addr), False)
+        self._pim.send(self._pim.encoder.deactivate_link(self._addr))
         self.update_device_levels(UpbCommand.DEACTIVATE)
 
     def goto(self, brightness, rate=-1):
@@ -58,7 +58,7 @@ class Link(Element):
         brightness, rate = check_dim_params(
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
-        self._pim.send(self._pim.encoder.goto(self._addr, brightness, rate), False)
+        self._pim.send(self._pim.encoder.goto(self._addr, brightness, rate))
         self.update_device_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
@@ -67,14 +67,12 @@ class Link(Element):
         brightness, rate = check_dim_params(
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
-        self._pim.send(
-            self._pim.encoder.fade_start(self._addr, brightness, rate), False
-        )
+        self._pim.send(self._pim.encoder.fade_start(self._addr, brightness, rate))
         self.update_device_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
-        self._pim.send(self._pim.encoder.fade_stop(self._addr), False)
+        self._pim.send(self._pim.encoder.fade_stop(self._addr))
         for device_link in self.devices:
             device = self._pim.devices.elements.get(device_link.device_id)
             if device:
@@ -86,7 +84,7 @@ class Link(Element):
             "unlimited_blink_rate"
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
-        self._pim.send(self._pim.encoder.blink(self._addr, rate), False)
+        self._pim.send(self._pim.encoder.blink(self._addr, rate))
         self.update_device_levels(UpbCommand.BLINK, 100)
 
     def update_device_levels(self, upb_cmd, level=-1, rate=-1):

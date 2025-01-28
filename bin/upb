@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
 
 import cmdr
+
 from upb_lib import UpbPim
 
 LOG = logging.getLogger(__name__)
+
 
 class StdOutWrapper:
     def __init__(self, cmdr):
@@ -17,7 +20,7 @@ class StdOutWrapper:
         self.cmdr = cmdr
         self.log = None
 
-    def write(self,txt):
+    def write(self, txt):
         txt = txt.rstrip()
         if len(txt) > 0:
             self.cmdr.output(txt)
@@ -27,69 +30,105 @@ class StdOutWrapper:
     def flush(self):
         pass
 
+
 def _unknown_handler(msg_code, data):
     LOG.debug("No decoder for message type: %s Contents: %s", msg_code, data)
+
 
 def _timeout_handler(msg_code):
     LOG.debug("Timeout waiting for '%s'", msg_code)
 
+
 class SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
-        if text.startswith('R|'):
+        if text.startswith("R|"):
             return text[2:].splitlines()
         return argparse.HelpFormatter._split_lines(self, text, width)
+
 
 def parse_args():
     parser = argparse.ArgumentParser("pim", formatter_class=SmartFormatter)
 
-    parser.add_argument('-i', '--interactive', action='store_true', default=False,
-                        dest='interactive',
-                        help='Run in interactive mode (type help for more info)')
-    parser.add_argument('-u', '--url', action='store', dest='url',
-            help=("R|URL to connect to in one of the following formats:\n"
-                 "  tcp://host[:port] -- connect to PIM over Ethernet\n"
-                 "  serial://port[:baud] -- connect to PIM over serial port\n"))
-    parser.add_argument('-x', '--tx_count', type=int, action='store', dest='tx_count',
-            help=("The number of times every UPB message is transmitted.\n"))
-    parser.add_argument('-f', '--flags', action='store', dest='flags',
-            help=("A comma separated list of key=value flags to pass to the PIM.\n"))
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        default=False,
+        dest="interactive",
+        help="Run in interactive mode (type help for more info)",
+    )
+    parser.add_argument(
+        "-u",
+        "--url",
+        action="store",
+        dest="url",
+        help=(
+            "R|URL to connect to in one of the following formats:\n"
+            "  tcp://host[:port] -- connect to PIM over Ethernet\n"
+            "  serial://port[:baud] -- connect to PIM over serial port\n"
+        ),
+    )
+    parser.add_argument(
+        "-x",
+        "--tx_count",
+        type=int,
+        action="store",
+        dest="tx_count",
+        help=("The number of times every UPB message is transmitted.\n"),
+    )
+    parser.add_argument(
+        "-f",
+        "--flags",
+        action="store",
+        dest="flags",
+        help=("A comma separated list of key=value flags to pass to the PIM.\n"),
+    )
 
     results = parser.parse_args()
     return results
 
-def main():
+
+async def main():
     config = {}
 
     args = parse_args()
-    url = args.url if args.url else os.environ.get('UPBPIM_URL')
+    url = args.url if args.url else os.environ.get("UPBPIM_URL")
     if url:
-        config['url'] = url
+        config["url"] = url
     if args.tx_count:
-        config['tx_count'] = args.tx_count
+        config["tx_count"] = args.tx_count
     if args.flags:
-        config['flags'] = args.flags
-    config['UPStartExportFile'] = 'bin/upb.upe'
+        config["flags"] = args.flags
+    config["UPStartExportFile"] = "bin/upb.upe"
 
     pim = UpbPim(config)
+    await pim.load_upstart_file()
 
-    stream = sys.stdout
+    console = None
     if args.interactive:
-        console = cmdr.Commander('PIM console', cmd_cb=cmdr.Commands(pim))
+        console = cmdr.Commander("PIM console", cmd_cb=cmdr.Commands(pim))
+        stream = sys.stdout
         stream = StdOutWrapper(console)
-    logging.basicConfig(stream=stream,
-                        format='%(levelname)s: %(message)s',
-                        level=logging.DEBUG)
+        logging.basicConfig(stream=stream, format="%(message)s", level=logging.DEBUG)
+    else:
+        logging.basicConfig(
+            format="%(asctime)s.%(msecs)03d %(message)s", datefmt="%H:%M:%S"
+        )
+        LOG.setLevel(logging.DEBUG)
+        logging.getLogger("upb_lib").setLevel(logging.DEBUG)
 
     try:
         # pim.add_handler('unknown', _unknown_handler)
         # pim.add_handler('timeout', _timeout_handler)
-        pim.connect()
-        if args.interactive:
+        await pim.async_connect()
+        if args.interactive and console:
             console.loop()
         else:
-            pim.run()
-    except KeyboardInterrupt:
+            await pim.run()
+    except (asyncio.CancelledError, KeyboardInterrupt) as _:
         exit(0)
 
-if __name__ == '__main__':
-    main()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    asyncio.get_event_loop().run_forever()

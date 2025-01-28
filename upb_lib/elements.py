@@ -63,6 +63,10 @@ class Element:
         """Get the address."""
         return self._addr
 
+    @property
+    def response_addr(self) -> bytearray:
+        return bytearray([self.addr.network_id, self.addr.upb_id])
+
     def add_callback(self, callback):
         """Callbacks when attribute of element changes"""
         self._callbacks.append(callback)

@@ -54,9 +54,9 @@ class UpbDevice(Element):
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
 
-        self._pim.send(encode_fn(self._addr, brightness, rate), False)
+        self._pim.send(encode_fn(self._addr, brightness, rate))
         if self._pim.flags.get("report_state"):
-            self._pim.send(self._pim.encoder.report_state(self._addr))
+            self.update_status()
         self.setattr("status", brightness)
 
     @property
@@ -78,8 +78,8 @@ class UpbDevice(Element):
 
     def fade_stop(self):
         """(Helper) Stop fading a device."""
-        self._pim.send(self._pim.encoder.fade_stop(self._addr), False)
-        self._pim.send(self._pim.encoder.report_state(self._addr))
+        self._pim.send(self._pim.encoder.fade_stop(self._addr))
+        self._pim.send(self._pim.encoder.report_state(self._addr), self.response_addr)
 
     def blink(self, rate=-1):
         """(Helper) Blink a device."""
@@ -87,14 +87,14 @@ class UpbDevice(Element):
             "unlimited_blink_rate"
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
-        self._pim.send(self._pim.encoder.blink(self._addr, rate), False)
+        self._pim.send(self._pim.encoder.blink(self._addr, rate))
         if self._pim.flags.get("report_state"):
-            self._pim.send(self._pim.encoder.report_state(self._addr))
+            self.update_status()
         self.setattr("status", 100)
 
     def update_status(self):
         """(Helper) Get status of a device."""
-        self._pim.send(self._pim.encoder.report_state(self._addr))
+        self._pim.send(self._pim.encoder.report_state(self._addr), self.response_addr)
 
 
 class UpbDevices(Elements):
@@ -117,7 +117,7 @@ class UpbDevices(Elements):
             device = self.elements[device_id]
             if device.addr.channel > 0:
                 continue
-            self.pim.send(self.pim.encoder.report_state(device.addr))
+            device.update_status()
 
     def _device_state_report_handler(self, msg):
         status_length = len(msg.data)
@@ -132,7 +132,7 @@ class UpbDevices(Elements):
 
             level = msg.data[i]
             device.setattr("status", level)
-            LOG.debug("(DSR) Device %s level is %d", device.name, device.status)
+            LOG.debug("Device status report: '%s' level %d", device.name, device.status)
 
     def _goto_handler(self, msg):
         if msg.link:
@@ -143,9 +143,7 @@ class UpbDevices(Elements):
         if device:
             level = msg.data[0] if len(msg.data) > 0 else -1
             device.setattr("status", level)
-            LOG.debug(
-                "(GOTO) Device %s/%s level %d", device.name, device.index, device.status
-            )
+            LOG.debug("Goto level report: '%s' level %d", device.name, device.status)
 
     def _register_values_report_handler(self, msg):
         data = msg.data

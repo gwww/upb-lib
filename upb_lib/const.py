@@ -29,6 +29,18 @@ class PimCommand(Enum):
     WRITE_PIM_REGISTERS = "\x17"
 
 
+class PimResponse(Enum):
+    """Responses from PIM"""
+
+    ACCEPT = "PA"
+    ERROR = "PE"
+    UPDATE = "PU"
+    REGISTER_REPORT = "PR"
+    ACK = "PK"
+    NACK = "PN"
+    BUSY = "PB"
+
+
 MANUFACTURERS = {
     "1": "PCS Lighting",
     "2": "MD Manufacturing",
