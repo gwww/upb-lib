@@ -114,11 +114,11 @@ class UpbPim:
         for t in self._connection._tasks:
             await t
             break
+        LOG.debug("Run ended, restarting connection")
 
     def send(self, msg, response_required=None, command=PimCommand.TX_UPB_MSG):
         """Send a message to UPB PIM."""
-        if self._connection:
-            self._connection.send(command, msg, response_required)
+        self._connection.send(command, msg, response_required)
 
     def pause(self):
         """Pause the connection from sending/receiving."""
