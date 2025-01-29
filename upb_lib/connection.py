@@ -166,7 +166,6 @@ class Connection:
                 self._writer.write(
                     (f"{q_entry.pim_command.value}{q_entry.msg}\r").encode()
                 )
-                # if q_entry.response_cmd:
                 await await_msg_response()
 
     def send(
