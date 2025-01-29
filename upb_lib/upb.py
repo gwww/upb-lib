@@ -112,11 +112,3 @@ class UpbPim:
     def send(self, msg, response_required=None, command=PimCommand.TX_UPB_MSG):
         """Send a message to UPB PIM."""
         self._connection.send(command, msg, response_required)
-
-    def pause(self):
-        """Pause the connection from sending/receiving."""
-        self._connection.pause()
-
-    def resume(self):
-        """Restart the connection from sending/receiving."""
-        self._connection.resume()

@@ -42,7 +42,6 @@ class Connection:
 
         self._writer: asyncio.StreamWriter | None = None
         self._awaiting_response_command: bytearray | None = None
-        self._paused = False
         self._write_queue: deque[QueuedWrite] = deque()
         self._check_write_queue = asyncio.Event()
         self._handled_response_event = asyncio.Event()
@@ -174,8 +173,6 @@ class Connection:
         self, pim_command: PimCommand, msg: str, response: bytearray | None
     ) -> None:
         """Send a message to PIM."""
-        if self._paused:
-            return
         LOG.debug("Queued %s '%s'", pim_command.name, msg)
         self._write_queue.append(QueuedWrite(pim_command, msg, response))
         self._check_write_queue.set()
@@ -183,15 +180,6 @@ class Connection:
     def is_connected(self) -> bool:
         """Is the connection active?"""
         return self._writer is not None
-
-    def pause(self) -> None:
-        """Pause the connection from sending/receiving."""
-        self._write_queue.clear()
-        self._paused = True
-
-    def resume(self) -> None:
-        """Restart the connection sending/receiving."""
-        self._paused = False
 
     def disconnect(self, reason: str = "") -> None:
         """Disconnect and cleanup."""
@@ -216,8 +204,6 @@ class Connection:
                 async with asyncio_timeout(HEARTBEAT_TIME):
                     await self._heartbeat_event.wait()
             except TimeoutError:
-                if self._paused:
-                    continue
                 self.disconnect("(heartbeat timeout)")
                 await self.connect()
                 break
