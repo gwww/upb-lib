@@ -124,7 +124,7 @@ async def main():
         if args.interactive and console:
             console.loop()
         else:
-            await pim.run()
+            await asyncio.Event().wait()
     except (asyncio.CancelledError, KeyboardInterrupt) as _:
         exit(0)
 

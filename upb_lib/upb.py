@@ -109,13 +109,6 @@ class UpbPim:
         """Disconnect the connection from sending/receiving."""
         self._connection.disconnect()
 
-    async def run(self):
-        """Enter the asyncio loop."""
-        for t in self._connection._tasks:
-            await t
-            break
-        LOG.debug("Run ended, restarting connection")
-
     def send(self, msg, response_required=None, command=PimCommand.TX_UPB_MSG):
         """Send a message to UPB PIM."""
         self._connection.send(command, msg, response_required)
