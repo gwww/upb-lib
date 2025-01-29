@@ -203,6 +203,7 @@ class Connection:
             if asyncio.current_task() != task:
                 task.cancel()
         self._tasks = set()
+        self._write_queue = deque()
         self._notifier.notify("disconnected", {})
 
     def _heartbeat(self) -> None:
