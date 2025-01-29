@@ -98,8 +98,12 @@ class Connection:
     async def _read_stream(self, reader: asyncio.StreamReader) -> None:
         read_buffer = ""
         while True:
-            data = await reader.read(500)
-            if not data:
+            try:
+                data = await reader.read(500)
+                if not data:
+                    break
+            except OSError as err:
+                LOG.error("Error connecting to PIM (%s)", err)
                 break
             self._heartbeat()
 
