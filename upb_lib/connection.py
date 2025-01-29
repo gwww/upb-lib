@@ -95,50 +95,50 @@ class Connection:
         self._last_message = saved_msg
         return False
 
+    async def _handle_pim_command(self, pim_command: str, pim_data: str) -> None:
+        def _handled_response(done_with_message=True):
+            if done_with_message:
+                self._write_queue.popleft()
+            self._handled_response_event.set()  # enables write stream to start again
+
+        # Ignore PimResponse PR, ACK and NACK
+        if pim_command == PimResponse.UPDATE.value:
+            reply_from, msg = decode(pim_data)
+            if self._is_repeated_message(msg):
+                LOG.debug("Repeated message; discarded.")
+            else:
+                if reply_from == self._awaiting_response_command:
+                    _handled_response()
+                self._notifier.notify(msg.msg_id, {"msg": msg})
+        elif pim_command == PimResponse.ACCEPT.value:
+            if not self._awaiting_response_command:
+                _handled_response()
+        elif pim_command == PimResponse.BUSY.value:
+            await asyncio.sleep(PIM_BUSY_TIMEOUT)
+            _handled_response(False)
+        elif pim_command == PimResponse.ERROR.value:
+            _handled_response()
+
     async def _read_stream(self, reader: asyncio.StreamReader) -> None:
         read_buffer = ""
         while True:
             try:
-                data = await reader.read(500)
-                if not data:
-                    break
-            except OSError as err:
+                if not (data := await reader.read(500)):
+                    raise ValueError()
+            except (OSError, ValueError) as err:
                 LOG.error("Error connecting to PIM (%s)", err)
+                self.disconnect("Lost connection to PIM")
+                self._notifier.notify("disconnected", {})
+                await self.connect()
                 break
+
             self._heartbeat()
 
             read_buffer += data.decode("ISO-8859-1")
             while "\r" in read_buffer:
                 line, read_buffer = read_buffer.split("\r", 1)
                 LOG.debug("got_data '%s'", line)
-
-                pim_command = line[:2]
-
-                # Ignore PimResponse PR, ACK and NACK
-                if pim_command == PimResponse.UPDATE.value:
-                    reply_from, msg = decode(line[2:])
-                    if self._is_repeated_message(msg):
-                        LOG.debug("Repeated message; discarded.")
-                    else:
-                        if reply_from == self._awaiting_response_command:
-                            self._handled_response()
-                        self._notifier.notify(msg.msg_id, {"msg": msg})
-
-                elif pim_command == PimResponse.ACCEPT.value:
-                    if not self._awaiting_response_command:
-                        self._handled_response()
-
-                elif pim_command == PimResponse.BUSY.value:
-                    await asyncio.sleep(PIM_BUSY_TIMEOUT)
-                    self._handled_response(False)
-
-                elif pim_command == PimResponse.ERROR.value:
-                    self._handled_response()
-
-    def _handled_response(self, done_with_message=True):
-        self._handled_response_event.set()  # enables write stream to start again
-        if done_with_message:
-            self._write_queue.popleft()
+                await self._handle_pim_command(line[:2], line[2:])
 
     async def _write_stream(self) -> None:
         async def await_msg_response() -> None:
