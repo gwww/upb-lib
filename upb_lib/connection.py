@@ -163,10 +163,10 @@ class Connection:
             self._check_write_queue.clear()
             if self._write_queue:
                 q_entry = self._write_queue[0]
-                LOG.debug("Write %s: '%s'", q_entry.pim_command.name, q_entry.msg)
+                LOG.debug("Write %s '%s'", q_entry.pim_command.name, q_entry.msg)
                 self._writer.write(
                     (f"{q_entry.pim_command.value}{q_entry.msg}\r").encode()
-                )  # type: ignore
+                )
                 # if q_entry.response_cmd:
                 await await_msg_response()
 
