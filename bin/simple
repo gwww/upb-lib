@@ -49,7 +49,7 @@ async def main():
         pim.loop.call_later(45, _dump_devices)
 
         await asyncio.Event().wait()  # wait forever
-    except KeyboardInterrupt:
+    except (asyncio.CancelledError, KeyboardInterrupt) as _:
         exit(0)
 
 
