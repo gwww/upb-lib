@@ -25,13 +25,19 @@ def process_upstart_file(pim, filename):
 
 
 def _process_file(pim, file):
+    line = file.readline()
+    fields = line.strip().split(",")
+    if fields[0] != "0":
+        LOG.error("Malformed UPE file; first line must be a 'Begining of file' record")
+        return
+
+    # File overview record
+    network_id = int(fields[4])
+    pim.network_id = network_id
+
     for line in file:
         fields = line.strip().split(",")
-        if fields[0] == "0":
-            # File overview record
-            network_id = int(fields[4])
-            pim.network_id = network_id
-        elif fields[0] == "2":
+        if fields[0] == "2":
             _link_definition_record(pim, network_id, fields)
         elif fields[0] == "3":
             _device_definition_record(pim, network_id, fields)
@@ -52,7 +58,7 @@ def _link_definition_record(pim, network_id, fields):
     pim.links.add_element(link)
 
 
-def _device_definition_record(pim, network_id, fields):
+def _device_definition_record(pim, network_id: int, fields: list[str]):
     upb_id = int(fields[1])
     number_of_channels = int(fields[8])
     multi_channel = number_of_channels > 1
