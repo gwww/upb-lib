@@ -4,7 +4,7 @@ Parse UPStart file and create UPB device/link objects
 
 import logging
 
-from .const import MANUFACTURERS, PRODUCTS
+from .const import MANUFACTURERS, PRODUCTS, UpeFileRecord
 from .devices import UpbAddr, UpbDevice
 from .links import DeviceLink, Link, LinkAddr
 from .util import parse_flags
@@ -27,7 +27,7 @@ def process_upstart_file(pim, filename):
 def _process_file(pim, file):
     line = file.readline()
     fields = line.strip().split(",")
-    if fields[0] != "0":
+    if fields[0] != UpeFileRecord.BOF.value:
         LOG.error("Malformed UPE file; first line must be a 'Begining of file' record")
         return
 
@@ -37,17 +37,17 @@ def _process_file(pim, file):
 
     for line in file:
         fields = line.strip().split(",")
-        if fields[0] == "2":
+        if fields[0] == UpeFileRecord.LINK_DEFN.value:
             _link_definition_record(pim, network_id, fields)
-        elif fields[0] == "3":
+        elif fields[0] == UpeFileRecord.DEVICE_DEFN.value:
             _device_definition_record(pim, network_id, fields)
-        elif fields[0] == "8":
+        elif fields[0] == UpeFileRecord.CHANNEL_DEFN.value:
             _channel_definition_record(pim, network_id, fields)
-        elif fields[0] == "4":
+        elif fields[0] == UpeFileRecord.LINK_DEVICE_DEFN.value:
             _link_device_definition_record(pim, network_id, fields)
-        elif fields[0] == "98":
+        elif fields[0] == UpeFileRecord.META_FLAGS_DEFN.value:
             _custom_flags_record(pim, ",".join(fields[1:]))
-        elif fields[0] == "99":
+        elif fields[0] == UpeFileRecord.META_RENAME_DEVICE.value:
             _rename_device_record(pim, fields)
 
 

@@ -41,6 +41,18 @@ class PimResponse(Enum):
     BUSY = "PB"
 
 
+class UpeFileRecord(Enum):
+    """Record types in UPE file"""
+
+    BOF = "0"
+    LINK_DEFN = "2"
+    DEVICE_DEFN = "3"
+    LINK_DEVICE_DEFN = "4"
+    CHANNEL_DEFN = "8"
+    META_FLAGS_DEFN = "98"
+    META_RENAME_DEVICE = "99"
+
+
 MANUFACTURERS = {
     "1": "PCS Lighting",
     "2": "MD Manufacturing",
