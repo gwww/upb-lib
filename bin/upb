@@ -31,14 +31,6 @@ class StdOutWrapper:
         pass
 
 
-def _unknown_handler(msg_code, data):
-    LOG.debug("No decoder for message type: %s Contents: %s", msg_code, data)
-
-
-def _timeout_handler(msg_code):
-    LOG.debug("Timeout waiting for '%s'", msg_code)
-
-
 class SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith("R|"):
@@ -112,14 +104,12 @@ async def main():
         logging.basicConfig(stream=stream, format="%(message)s", level=logging.DEBUG)
     else:
         logging.basicConfig(
-            format="%(asctime)s.%(msecs)03d %(message)s", datefmt="%H:%M:%S"
+            format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            level=logging.DEBUG,
         )
-        LOG.setLevel(logging.DEBUG)
-        logging.getLogger("upb_lib").setLevel(logging.DEBUG)
 
     try:
-        # pim.add_handler('unknown', _unknown_handler)
-        # pim.add_handler('timeout', _timeout_handler)
         await pim.async_connect()
         if args.interactive and console:
             console.loop()
