@@ -2,11 +2,13 @@
 Base of the UpbDevice and link elements.
 """
 
+from typing import Generic, TypeVar
+
 
 class Addr:
     """Base representation of an address for UPB devices and links."""
 
-    def __init__(self, network_id, upb_id, is_link=False):
+    def __init__(self, network_id: int, upb_id: int, is_link: bool = False):
         self._network_id = network_id
         self._upb_id = upb_id
         self._is_link = is_link
@@ -45,7 +47,7 @@ class Addr:
 class Element:
     """Element class"""
 
-    def __init__(self, addr, pim):
+    def __init__(self, addr: Addr, pim):
         self._addr = addr
         self._index = addr.index
         self._pim = pim
@@ -108,12 +110,15 @@ class Element:
         return {key: attrs[key] for key in attrs if not key.startswith("_")}
 
 
-class Elements:
+T = TypeVar("T", bound=Element)
+
+
+class Elements(Generic[T]):
     """Base for list of elements."""
 
     def __init__(self, pim):
         self.pim = pim
-        self.elements = {}
+        self.elements: dict[str, Element] = {}
         self.pim.add_sync_handler(self.sync)
 
     def add_element(self, element):

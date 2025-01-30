@@ -12,7 +12,9 @@ LOG = logging.getLogger(__name__)
 class UpbAddr(Addr):
     """Representation of a UPB device address."""
 
-    def __init__(self, network_id, upb_id, channel, multi_channel=False):
+    def __init__(
+        self, network_id: int, upb_id: int, channel: int, multi_channel: bool = False
+    ):
         super().__init__(network_id, upb_id)
         self._channel = channel
         self._multi_channel = multi_channel
@@ -29,7 +31,7 @@ class UpbAddr(Addr):
         return self._multi_channel
 
     @staticmethod
-    def parse(str_form):
+    def parse(str_form: str):
         """Parses an index string into a UpbAddr instance."""
         parts = str_form.split("_")
         return UpbAddr(int(parts[0]), int(parts[1]), int(parts[2]))
@@ -38,7 +40,7 @@ class UpbAddr(Addr):
 class UpbDevice(Element):
     """Class representing a UPB device."""
 
-    def __init__(self, addr, pim):
+    def __init__(self, addr: UpbAddr, pim):
         super().__init__(addr, pim)
         self.status = None
         self.version = None
