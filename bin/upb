@@ -124,7 +124,7 @@ async def main():
         if args.interactive and console:
             console.loop()
         else:
-            await asyncio.Event().wait()
+            await asyncio.Event().wait()  # wait forever
     except (asyncio.CancelledError, KeyboardInterrupt) as _:
         exit(0)
 
