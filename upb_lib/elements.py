@@ -53,7 +53,7 @@ class Element:
         self._pim = pim
         self._callbacks = []
         self._changeset = {}
-        self.name = None
+        self.name: str | None = None
 
     @property
     def index(self):

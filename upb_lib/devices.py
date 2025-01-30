@@ -42,12 +42,12 @@ class UpbDevice(Element):
 
     def __init__(self, addr: UpbAddr, pim):
         super().__init__(addr, pim)
-        self.status = None
-        self.version = None
-        self.manufacturer = None
-        self.product = None
-        self.kind = None
-        self.dimmable = None
+        self.status: int | None = None
+        self.version: str | None = None
+        self.manufacturer: str | None = None
+        self.product: str | None = None
+        self.kind: str | None = None
+        self.dimmable: bool | None = None
 
     def _level(self, brightness, rate, encode_fn):
         if not self.dimmable and brightness > 0:
@@ -99,7 +99,7 @@ class UpbDevice(Element):
         self._pim.send(self._pim.encoder.report_state(self._addr), self.response_addr)
 
 
-class UpbDevices(Elements):
+class UpbDevices(Elements[UpbDevice]):
     """Handling for multiple devices."""
 
     def __init__(self, pim):
