@@ -76,8 +76,8 @@ class Connection:
                 retry_time = min(60, retry_time * 2)
                 continue
 
-            if scheme != "serial":
-                self._tasks.add(asyncio.create_task(self._heartbeat_timer()))
+            # if scheme != "serial":
+            self._tasks.add(asyncio.create_task(self._heartbeat_timer()))
             self._tasks.add(asyncio.create_task(self._read_stream(reader)))
             self._tasks.add(asyncio.create_task(self._write_stream()))
             self._notifier.notify("connected", {})
@@ -100,7 +100,7 @@ class Connection:
                 self._write_queue.popleft()
             self._handled_response_event.set()  # enables write stream to start again
 
-        # Ignore PimResponse PR, ACK and NACK
+        # Ignore PimResponse ACK and NACK
         if pim_command == PimResponse.UPDATE.value:
             reply_from, msg = decode(pim_data)
             if self._is_repeated_message(msg):
@@ -112,6 +112,8 @@ class Connection:
         elif pim_command == PimResponse.ACCEPT.value:
             if not self._awaiting_response_command:
                 _handled_response()
+        elif pim_command == PimResponse.REGISTER_REPORT.value:
+            _handled_response()
         elif pim_command == PimResponse.BUSY.value:
             await asyncio.sleep(PIM_BUSY_TIMEOUT)
             _handled_response(False)
@@ -197,12 +199,19 @@ class Connection:
         self._heartbeat_event.set()
 
     async def _heartbeat_timer(self) -> None:
+        timeout_time = HEARTBEAT_TIME
         while True:
             self._heartbeat_event.clear()
             try:
-                async with asyncio_timeout(HEARTBEAT_TIME):
+                async with asyncio_timeout(timeout_time):
                     await self._heartbeat_event.wait()
+                timeout_time = HEARTBEAT_TIME
             except TimeoutError:
-                self.disconnect("(heartbeat timeout)")
-                await self.connect()
-                break
+                if timeout_time == HEARTBEAT_TIME:
+                    # Send message and wait normal msg timeout for response
+                    timeout_time = MESSAGE_RESPONSE_TIME
+                    self.send(PimCommand.READ_PIM_REGISTERS, "0001FF", None)
+                else:
+                    self.disconnect("(heartbeat timeout)")
+                    await self.connect()
+                    break

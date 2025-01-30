@@ -58,7 +58,7 @@ class UpbPim:
         # The intention of this message is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This might
         # return OK or it might return an error, but hopefully resets the PIM.
-        self._connection.send(PimCommand.WRITE_PIM_REGISTERS, "70028E", None)
+        self._connection.send(PimCommand.READ_PIM_REGISTERS, "0001FF", None)
 
         # Ensure we're in "message" (and not "pulse") mode. See PCS PIM Protocol 2.2.3
         self._connection.send(PimCommand.WRITE_PIM_REGISTERS, "70028E", None)
