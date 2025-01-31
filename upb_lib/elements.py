@@ -12,7 +12,7 @@ class Addr:
         self._network_id = network_id
         self._upb_id = upb_id
         self._is_link = is_link
-        self._index = None
+        self._index: str = ""
 
     @property
     def network_id(self):
@@ -118,7 +118,7 @@ class Elements(Generic[T]):
 
     def __init__(self, pim):
         self.pim = pim
-        self.elements: dict[str, Element] = {}
+        self.elements: dict[str, T] = {}
         self.pim.add_sync_handler(self.sync)
 
     def add_element(self, element):
