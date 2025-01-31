@@ -39,7 +39,6 @@ class UpbPim:
         self._connection = Connection(config["url"], self._notifier)
 
         self.encoder = MessageEncode(config.get("tx_count", 1))
-        self._sync_handlers = []
         self.devices = UpbDevices(self)
         self.links = Links(self)
         self.network_id = None
@@ -91,15 +90,11 @@ class UpbPim:
         else:
             LOG.warning("Timeout communicating with PIM, is it connected?")
 
-    def add_sync_handler(self, sync_handler):
-        """Register a fn that synchronizes elements."""
-        self._sync_handlers.append(sync_handler)
-
     def call_sync_handlers(self):
         """Invoke the synchronization handlers."""
         LOG.debug("Synchronizing status of UPB network...")
-        for sync_handler in self._sync_handlers:
-            sync_handler()
+        self.devices.sync()
+        self.links.sync()
 
     def is_connected(self):
         """Status of connection to PIM."""

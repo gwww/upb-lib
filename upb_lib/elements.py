@@ -119,7 +119,6 @@ class Elements(Generic[T]):
     def __init__(self, pim):
         self.pim = pim
         self.elements: dict[str, T] = {}
-        self.pim.add_sync_handler(self.sync)
 
     def add_element(self, element):
         """Add an element to list of elements."""
