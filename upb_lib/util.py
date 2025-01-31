@@ -2,6 +2,7 @@
 
 import contextlib
 import re
+from typing import Any
 
 # Array for converting seconds to a rate (aka transition) length
 SECONDS_TO_RATE = [
@@ -72,9 +73,9 @@ def parse_url(url):
     return (scheme, host, int(port))
 
 
-def parse_flags(flags):
+def parse_flags(flags_in: str) -> dict[str, Any]:
     """Parse flags that change behavior of library."""
-    flags = re.split(r"\s*,\s*", flags)
+    flags = re.split(r"\s*,\s*", flags_in)
     return_value = {}
     for flag in flags:
         flag = re.split(r"\s*=\s*", flag)
