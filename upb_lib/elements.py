@@ -89,7 +89,9 @@ class Element:
             observer(self, self._changeset)
         self._changeset = {}
 
-    def setattr(self, attr, new_value, close_the_changeset=True):
+    def setattr(
+        self, attr: str, new_value: Any, close_the_changeset: bool = True
+    ) -> None:
         """If attribute value has changed then set it and call the callbacks"""
         existing_value = getattr(self, attr, None)
         if existing_value != new_value:
@@ -125,7 +127,7 @@ class Elements(Generic[T]):
         self.pim = pim
         self.elements: dict[str, T] = {}
 
-    def add_element(self, element):
+    def add_element(self, element: T):
         """Add an element to list of elements."""
         self.elements[element.index] = element
 
@@ -134,7 +136,7 @@ class Elements(Generic[T]):
         for _, element in self.elements.items():
             element._notify()
 
-    def sync(self):
+    def sync(self) -> None:
         """Should be overridden by derived class."""
         raise NotImplementedError()
 
