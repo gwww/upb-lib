@@ -9,7 +9,7 @@ from .const import PimCommand
 from .devices import UpbAddr, UpbDevices
 from .links import Links
 from .message import MessageEncode
-from .notify import Notifier
+from .notify import Notifier, NotifyHandler
 from .parse_upstart import process_upstart_file
 from .util import parse_flags
 
@@ -74,11 +74,11 @@ class UpbPim:
     def _disconnected(self) -> None:
         LOG.warning("PIM at %s disconnected", self._config["url"])
 
-    def add_handler(self, msg_type, handler):
+    def add_handler(self, msg_type: str, handler: NotifyHandler) -> None:
         """Add handler for a message type."""
         self._notifier.attach(msg_type, handler)
 
-    def _timeout(self, addr):
+    def _timeout(self, addr) -> None:
         if addr:
             device_id = UpbAddr(addr[0], addr[1], 0).index
             device = self.devices.elements.get(device_id)
@@ -90,15 +90,15 @@ class UpbPim:
         else:
             LOG.warning("Timeout communicating with PIM, is it connected?")
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Status of connection to PIM."""
         return self._connection.is_connected()
 
-    async def async_connect(self):
+    async def async_connect(self) -> None:
         """Connect to the PIM"""
         await self._connection.connect()
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """Disconnect the connection from sending/receiving."""
         self._connection.disconnect()
 
