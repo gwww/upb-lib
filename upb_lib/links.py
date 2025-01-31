@@ -112,7 +112,7 @@ class Link(Element):
         self.setattr("last_change", changes)
 
 
-class Links(Elements):
+class Links(Elements[Link]):
     """Handling for multiple links."""
 
     def __init__(self, pim):
