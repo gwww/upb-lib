@@ -13,7 +13,8 @@ async def main():
     def _dump_devices():
         for device_id in pim.devices:
             device = pim.devices[device_id]
-            LOG.debug(f"{device_id} {device.name} {device.status}")
+            if device:
+                LOG.debug(f"{device_id} {device.name} {device.status}")
 
     def _test_commands():
         device = pim.devices["142_42_0"]
@@ -46,7 +47,8 @@ async def main():
         await pim.async_connect()
 
         # pim.loop.call_later(0.1, _test_commands)
-        pim.loop.call_later(45, _dump_devices)
+        loop = asyncio.get_running_loop()
+        loop.call_later(45, _dump_devices)
 
         await asyncio.Event().wait()  # wait forever
     except (asyncio.CancelledError, KeyboardInterrupt) as _:

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from typing import Any
 
 from .connection import Connection
 from .const import PimCommand
@@ -19,15 +20,18 @@ class UpbPim:
     """Represents all the components on an UPB PIM."""
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, config):
-        """Initialize a new PIM instance."""
+    def __init__(
+        self, config: dict[str, Any], loop: asyncio.AbstractEventLoop | None = None
+    ) -> None:
+        """Initialize a new Elk instance."""
         self._config = config
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        self.loop = loop
+        if not loop:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        self._loop = loop
 
         self.flags = parse_flags(config.get("flags", ""))
 
