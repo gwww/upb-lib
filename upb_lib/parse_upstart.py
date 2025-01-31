@@ -25,15 +25,12 @@ def process_upstart_file(pim, filename):
 
 
 def _process_file(pim, file):
-    line = file.readline()
-    fields = line.strip().split(",")
+    # File overview record
+    fields = file.readline().strip().split(",")
     if fields[0] != UpeFileRecord.BOF.value:
         LOG.error("Malformed UPE file; first line must be a 'Begining of file' record")
         return
-
-    # File overview record
     network_id = int(fields[4])
-    pim.network_id = network_id
 
     for line in file:
         fields = line.strip().split(",")

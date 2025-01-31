@@ -41,7 +41,6 @@ class UpbPim:
         self.encoder = MessageEncode(config.get("tx_count", 1))
         self.devices = UpbDevices(self)
         self.links = Links(self)
-        self.network_id = None
 
         self._notifier.attach("connected", self._connected)
         self._notifier.attach("disconnected", self._disconnected)
@@ -56,7 +55,7 @@ class UpbPim:
                 self.encoder.tx_count = self.flags["tx_count"]
 
     def _connected(self) -> None:
-        LOG.info("Connected to UPB PIM")
+        LOG.info("Connected to UPB PIM; getting status of devices")
 
         # The intention of this message is to clear anything in the PIM receive buffer.
         # A number of times on startup error(s) (PE) are returned. This might
@@ -69,7 +68,8 @@ class UpbPim:
         if self.flags.get("no_sync"):
             LOG.warning("Initial device sync turned off")
         else:
-            self.call_sync_handlers()
+            self.devices.sync()
+            self.links.sync()
 
     def _disconnected(self) -> None:
         LOG.warning("PIM at %s disconnected", self._config["url"])
@@ -89,12 +89,6 @@ class UpbPim:
             )
         else:
             LOG.warning("Timeout communicating with PIM, is it connected?")
-
-    def call_sync_handlers(self):
-        """Invoke the synchronization handlers."""
-        LOG.debug("Synchronizing status of UPB network...")
-        self.devices.sync()
-        self.links.sync()
 
     def is_connected(self):
         """Status of connection to PIM."""
