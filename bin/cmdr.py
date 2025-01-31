@@ -14,8 +14,8 @@ from importlib import import_module
 import attr
 import urwid
 
-from upb_lib.message import MessageDecode, MessageEncode
 from upb_lib.devices import UpbAddr
+from upb_lib.message import MessageDecode, MessageEncode
 
 
 @attr.s
@@ -86,7 +86,7 @@ def get_helpers(element, clas):
                 params = " ".join(["<" + p + ">" for p in params])
                 helpers[function_name] = (
                     fn,
-                    "{} {}".format(function_name, params),
+                    f"{function_name} {params}",
                     fn.__doc__[8:],
                 )
     return helpers
@@ -107,14 +107,14 @@ class Commands:
             params.pop(0)  # 'self'
             params[0] = "UpbAddr:str:'e.g. 1_21_0'"
             params = " ".join(["<" + p + ">" for p in params])
-            self.encode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
+            self.encode_cmds[cmd] = Command(fn, f"{cmd} {params}", fn.__doc__)
         self.decode_cmds = {}
         for cmd, fn in inspect.getmembers(MessageDecode, inspect.isfunction):
-            if not cmd in ["decode", "handle"]:
+            if cmd not in ["decode", "handle"]:
                 continue
             params = [p for p in inspect.signature(fn).parameters]
             params = "<hex_command:str:'e.g. 07000144FF3085'>"
-            self.decode_cmds[cmd] = Command(fn, "{} {}".format(cmd, params), fn.__doc__)
+            self.decode_cmds[cmd] = Command(fn, f"{cmd} {params}", fn.__doc__)
 
         self.element_cmds = {}
         self.subcommands = {}
@@ -127,8 +127,8 @@ class Commands:
                 cmd = element[:-1]
             self.element_cmds[cmd] = (
                 fn,
-                "{} <range list> [subcommand]".format(cmd),
-                "Displays internal state of {}".format(element),
+                f"{cmd} <range list> [subcommand]",
+                f"Displays internal state of {element}",
                 get_helpers(element, cmd.capitalize()),
             )
 
@@ -140,7 +140,7 @@ class Commands:
         if cmd in self._quit_cmd:
             return Commander.Exit
 
-        print("#blue#{}".format(line))
+        print(f"#blue#{line}")
 
         if cmd in self._help_cmd:
             return self.help(cmd, args)
@@ -154,7 +154,7 @@ class Commands:
         if cmd in self.element_cmds:
             return self.element_cmds[cmd][0](cmd, args)
 
-        return "#error#Unknown command: {}".format(cmd)
+        return f"#error#Unknown command: {cmd}"
 
     def help(self, cmd, args):
         if len(args) == 0:
@@ -173,16 +173,14 @@ class Commands:
         for cmd_list in [self.encode_cmds, self.decode_cmds]:
             if help_for in cmd_list:
                 command = cmd_list[help_for]
-                return "#green#{}\n{}".format(command.help, command.docs)
+                return f"#green#{command.help}\n{command.docs}"
 
         if help_for not in self.element_cmds:
-            return "#error#Unknown command: {}".format(help_for)
+            return f"#error#Unknown command: {help_for}"
 
-        res = "#green#{}\n{}".format(
-            self.element_cmds[help_for][1], self.element_cmds[help_for][2]
-        )
+        res = f"#green#{self.element_cmds[help_for][1]}\n{self.element_cmds[help_for][2]}"
         for k, v in self.element_cmds[help_for][3].items():
-            res += "\nSubcommand: {}\n{}".format(v[1], v[2])
+            res += f"\nSubcommand: {v[1]}\n{v[2]}"
         return res
 
     def print_elements(self, cmd, args):
@@ -192,7 +190,7 @@ class Commands:
             if args[1] in self.element_cmds[cmd][3]:
                 fn = self.element_cmds[cmd][3][args[1]][0]
             else:
-                raise NotImplemented
+                raise NotImplementedError
             for i in args[0]:
                 print(fn)
                 fn(element_list[i], *args[2])
@@ -218,7 +216,7 @@ class Commands:
         return self.decode_cmds[cmd].function(*params)
 
 
-class FocusMixin(object):
+class FocusMixin:
     def mouse_event(self, size, event, button, x, y, focus):
         if focus and hasattr(self, "_got_focus") and self._got_focus:
             self._got_focus()
@@ -288,7 +286,7 @@ class Commander(urwid.Frame):
     Commander.loop(). You can also asynchronously output messages
     with Commander.output('message')"""
 
-    class Exit(object):
+    class Exit:
         pass
 
     PALLETE = [

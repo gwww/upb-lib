@@ -3,11 +3,11 @@ from upb_lib.message import MessageEncode
 
 
 def test_create_control_word_all_zeros():
-    assert "{:04X}".format(MessageEncode(1)._create_control_word(False, 0, 0)) == "0000"
+    assert f"{MessageEncode(1)._create_control_word(False, 0, 0):04X}" == "0000"
 
 
 def test_create_control_word_all_ones():
-    assert "{:04X}".format(MessageEncode(4)._create_control_word(True, 3, 7)) == "E07C"
+    assert f"{MessageEncode(4)._create_control_word(True, 3, 7):04X}" == "E07C"
 
 
 def test_encode_message():

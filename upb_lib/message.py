@@ -6,7 +6,7 @@ import logging
 from collections import namedtuple
 from functools import reduce
 
-from .const import PimCommand, UpbCommand
+from .const import UpbCommand
 
 LOG = logging.getLogger(__name__)
 PIM_ID = 0xFF
