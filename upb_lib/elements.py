@@ -2,7 +2,10 @@
 Base of the UpbDevice and link elements.
 """
 
-from typing import Generic, TypeVar
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar
 
 
 class Addr:
@@ -15,27 +18,27 @@ class Addr:
         self._index: str = ""
 
     @property
-    def network_id(self):
+    def network_id(self) -> int:
         """Return the network id."""
         return self._network_id
 
     @property
-    def upb_id(self):
+    def upb_id(self) -> int:
         """Return the device id."""
         return self._upb_id
 
     @property
-    def is_device(self):
+    def is_device(self) -> bool:
         """Return the if this is a device."""
         return not self._is_link
 
     @property
-    def is_link(self):
+    def is_link(self) -> bool:
         """Return the if this is a link."""
         return self._is_link
 
     @property
-    def index(self):
+    def index(self) -> str:
         """Return the address in index form."""
         return self._index
 
@@ -51,8 +54,8 @@ class Element:
         self._addr = addr
         self._index = addr.index
         self._pim = pim
-        self._callbacks = []
-        self._changeset = {}
+        self._observers: list[Callable[[Element, dict[str, Any]], None]] = []
+        self._changeset: dict[str, Any] = {}
         self.name: str | None = None
 
     @property
@@ -69,19 +72,21 @@ class Element:
     def response_addr(self) -> bytearray:
         return bytearray([self.addr.network_id, self.addr.upb_id])
 
-    def add_callback(self, callback):
+    def add_callback(self, observer: Callable[[Element, dict[str, Any]], None]) -> None:
         """Callbacks when attribute of element changes"""
-        self._callbacks.append(callback)
+        self._observers.append(observer)
 
-    def remove_callback(self, callback):
+    def remove_callback(
+        self, observer: Callable[[Element, dict[str, Any]], None]
+    ) -> None:
         """Callbacks when attribute of element changes"""
-        if callback in self._callbacks:
-            self._callbacks.remove(callback)
+        if observer in self._observers:
+            self._observers.remove(observer)
 
-    def call_callbacks(self):
+    def _notify(self) -> None:
         """Callbacks when attribute of element changes"""
-        for callback in self._callbacks:
-            callback(self, self._changeset)
+        for observer in self._observers:
+            observer(self, self._changeset)
         self._changeset = {}
 
     def setattr(self, attr, new_value, close_the_changeset=True):
@@ -92,7 +97,7 @@ class Element:
             self._changeset[attr] = new_value
 
         if close_the_changeset and self._changeset:
-            self.call_callbacks()
+            self._notify()
 
     def __str__(self):
         varlist = {
@@ -127,7 +132,7 @@ class Elements(Generic[T]):
     def connection_status_change(self, _):
         """Force a callback when the PIM becomes connected/disconnected."""
         for _, element in self.elements.items():
-            element.call_callbacks()
+            element._notify()
 
     def sync(self):
         """Should be overridden by derived class."""
