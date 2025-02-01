@@ -30,7 +30,7 @@ class LinkAddr(Addr):
         self._index = f"{self.network_id}_{self.upb_id}"
 
 
-class Link(Element):
+class Link(Element[LinkAddr]):
     """Class representing a UPB Link."""
 
     def __init__(self, addr, pim):

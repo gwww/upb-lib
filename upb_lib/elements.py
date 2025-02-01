@@ -47,10 +47,13 @@ class Addr:
         return str(self._index)
 
 
-class Element:
+U = TypeVar("U", bound=Addr)
+
+
+class Element(Generic[U]):
     """Element class"""
 
-    def __init__(self, addr: Addr, pim):
+    def __init__(self, addr: U, pim):
         self._addr = addr
         self._index = addr.index
         self._pim = pim

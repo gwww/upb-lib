@@ -37,7 +37,7 @@ class UpbAddr(Addr):
         return UpbAddr(int(parts[0]), int(parts[1]), int(parts[2]))
 
 
-class UpbDevice(Element):
+class UpbDevice(Element[UpbAddr]):
     """Class representing a UPB device."""
 
     def __init__(self, addr: UpbAddr, pim):
