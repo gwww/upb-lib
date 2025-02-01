@@ -29,23 +29,32 @@ def decode(line: str) -> tuple[bytearray, Message]:
     DD - Destination ID
     SS - Source ID
     MM - UPB Message type
-    ... - contents of UPB message, vary by type
+    ... - contents of UPB message, vary by type; decoded by msg handler
     KK - checksum
     """
 
     # TODO: check msg.length; check checksum
 
-    bytes = bytearray.fromhex(line[:-2])  # strip checksum
+    bytes = bytearray.fromhex(line)  # strip checksum
+
+    cksum = (256 - reduce(lambda x, y: x + y, bytes)) % 256
+    if cksum != 0:
+        raise ValueError("Message has bad checksum")
 
     if len(bytes) < 6:
         raise ValueError("UPB message less than 12 characters")
 
     control = int.from_bytes(bytes[0:2], byteorder="big")
+    length = (control >> 8) & 31
+    if length != len(bytes):
+        raise ValueError(
+            "UPB message has bad length, got %d, expected %d", len(bytes), length
+        )
 
     msg = Message(
         link=(control & 0x8000) != 0,
         repeater_req=(control >> 13) & 3,
-        length=(control >> 8) & 31,
+        length=length,
         ack_req=(control >> 4) & 7,
         tx_count=(control >> 2) & 3,
         tx_seq=control & 3,
@@ -53,7 +62,7 @@ def decode(line: str) -> tuple[bytearray, Message]:
         dest_id=bytes[3],
         src_id=bytes[4],
         msg_id=bytes[5],
-        data=bytes[6:],
+        data=bytes[6:-1],
     )
     response_for = bytearray([msg.network_id, msg.src_id])
 
