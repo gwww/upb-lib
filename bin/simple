@@ -17,10 +17,10 @@ async def main():
                 LOG.debug(f"{device_id} {device.name} {device.status}")
 
     def _test_commands():
-        device = pim.devices["142_42_0"]
-        device.turn_on(75, 38)
-        link = pim.links["142_6"]
-        link.activate()
+        if device := pim.devices["142_42_0"]:
+            device.turn_on(75, 38)
+        if link := pim.links["142_6"]:
+            link.activate()
 
     def connected():
         print("Connected!!!")
@@ -46,9 +46,9 @@ async def main():
         await pim.load_upstart_file()
         await pim.async_connect()
 
-        # pim.loop.call_later(0.1, _test_commands)
         loop = asyncio.get_running_loop()
         loop.call_later(45, _dump_devices)
+        # loop.call_later(0.1, _test_commands)
 
         await asyncio.Event().wait()  # wait forever
     except (asyncio.CancelledError, KeyboardInterrupt) as _:
