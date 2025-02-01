@@ -70,6 +70,7 @@ class Element:
 
     @property
     def response_addr(self) -> bytearray:
+        """Convert network_id and upb_id into bytes used for checking response"""
         return bytearray([self.addr.network_id, self.addr.upb_id])
 
     def add_callback(self, observer: Callable[[Element, dict[str, Any]], None]) -> None:
@@ -134,7 +135,7 @@ class Elements(Generic[T]):
     def connection_status_change(self, _):
         """Force a callback when the PIM becomes connected/disconnected."""
         for _, element in self.elements.items():
-            element._notify()
+            element._notify()  # pylint: disable=protected-access
 
     def sync(self) -> None:
         """Should be overridden by derived class."""

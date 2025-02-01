@@ -143,6 +143,7 @@ class Connection:
 
     async def _write_stream(self) -> None:
         async def await_msg_response() -> None:
+            # pylint: disable=possibly-used-before-assignment
             self._awaiting_response_command = q_entry.response_cmd
             try:
                 async with asyncio_timeout(MESSAGE_RESPONSE_TIME):

@@ -47,8 +47,9 @@ class UpbPim:
         self._notifier.attach("timeout", self._timeout)
 
     async def load_upstart_file(self):
+        """Parse and load the UPStart UPE export file"""
         if path := self._config.get("UPStartExportFile"):
-            self.config_ok = await asyncio.get_running_loop().run_in_executor(
+            await asyncio.get_running_loop().run_in_executor(
                 None, process_upstart_file, self, path
             )
             if self.flags.get("tx_count"):
