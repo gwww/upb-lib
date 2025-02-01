@@ -94,14 +94,18 @@ async def main():
     config["UPStartExportFile"] = "bin/upb.upe"
 
     pim = UpbPim(config)
-    await pim.load_upstart_file()
 
     console = None
     if args.interactive:
         console = cmdr.Commander("PIM console", cmd_cb=cmdr.Commands(pim))
         stream = sys.stdout
         stream = StdOutWrapper(console)
-        logging.basicConfig(stream=stream, format="%(message)s", level=logging.DEBUG)
+        logging.basicConfig(
+            stream=stream,
+            format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            level=logging.DEBUG,
+        )
     else:
         logging.basicConfig(
             format="%(asctime)s.%(msecs)03d %(levelname)s  %(message)s",
@@ -110,6 +114,7 @@ async def main():
         )
 
     try:
+        await pim.load_upstart_file()
         await pim.async_connect()
         if args.interactive and console:
             console.loop()
