@@ -87,7 +87,7 @@ class Link(Element):
         self._pim.send(self._pim.encoder.blink(self._addr, rate))
         self.update_device_levels(UpbCommand.BLINK, 100)
 
-    def update_device_levels(self, upb_cmd, level=-1, rate=-1):
+    def update_device_levels(self, upb_cmd: UpbCommand, level=-1, rate=-1):
         """Update the dim level on all devices in this link."""
         LOG.debug("%s %s %s", upb_cmd.name.capitalize(), self.name, self.index)
         for device_link in self.devices:
@@ -105,11 +105,15 @@ class Link(Element):
             device.setattr("status", set_level)
             LOG.debug("  Updating '%s' to level %d", device.name, set_level)
 
-        changes = {"timestamp": time()}
-        changes["command"] = UPB_COMMAND_TO_ACTION_MAPPING[upb_cmd.name]
-        changes["level"] = level
-        changes["rate"] = rate
-        self.setattr("last_change", changes)
+        self.setattr(
+            "last_change",
+            {
+                "timestamp": time(),
+                "command": UPB_COMMAND_TO_ACTION_MAPPING[upb_cmd.name],
+                "level": level,
+                "rate": rate,
+            },
+        )
 
 
 class Links(Elements[Link]):
