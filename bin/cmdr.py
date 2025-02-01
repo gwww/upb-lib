@@ -56,7 +56,7 @@ def parse_range(rng, max):
             xr = [s.strip() for s in x.split("-")]
             ids.extend(range(int(xr[0]), int(xr[1]) + 1))
         else:
-            raise ValueError('Unknown range type: "%s"' % x)
+            raise ValueError(f'Unknown range type: "{x}"')
     return ids
 
 
@@ -181,7 +181,7 @@ class Commands:
         res = (
             f"#green#{self.element_cmds[help_for][1]}\n{self.element_cmds[help_for][2]}"
         )
-        for k, v in self.element_cmds[help_for][3].items():
+        for _k, v in self.element_cmds[help_for][3].items():
             res += f"\nSubcommand: {v[1]}\n{v[2]}"
         return res
 
@@ -222,7 +222,7 @@ class FocusMixin:
     def mouse_event(self, size, event, button, x, y, focus):
         if focus and hasattr(self, "_got_focus") and self._got_focus:
             self._got_focus()
-        return super(FocusMixin, self).mouse_event(size, event, button, x, y, focus)
+        return super().mouse_event(size, event, button, x, y, focus)
 
 
 class ListView(FocusMixin, urwid.ListBox):
@@ -234,7 +234,7 @@ class ListView(FocusMixin, urwid.ListBox):
 
     def mouse_event(self, size, event, button, x, y, focus):
         direction = "up" if button == 4 else "down"
-        return super(ListView, self).keypress(size, direction)
+        return super().keypress(size, direction)
 
     def add(self, line):
         with self._lock:
@@ -303,7 +303,7 @@ class Commander(urwid.Frame):
     def __init__(
         self,
         title,
-        command_caption="Command:  (Tab to switch focus to upper frame, where you can scroll text)",
+        command_caption="Command: (Switch to upper frame with <Tab>)",
         cmd_cb=None,
         max_size=1000,
     ):
@@ -351,7 +351,7 @@ class Commander(urwid.Frame):
                 res = self._cmd(line)
             except Exception as e:
                 traceback.print_exc()
-                self.output("Error: %s" % e, "error")
+                self.output(f"Error: {e}", "error")
                 return
             if res == Commander.Exit:
                 raise urwid.ExitMainLoop()
