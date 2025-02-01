@@ -178,7 +178,9 @@ class Commands:
         if help_for not in self.element_cmds:
             return f"#error#Unknown command: {help_for}"
 
-        res = f"#green#{self.element_cmds[help_for][1]}\n{self.element_cmds[help_for][2]}"
+        res = (
+            f"#green#{self.element_cmds[help_for][1]}\n{self.element_cmds[help_for][2]}"
+        )
         for k, v in self.element_cmds[help_for][3].items():
             res += f"\nSubcommand: {v[1]}\n{v[2]}"
         return res

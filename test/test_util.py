@@ -1,4 +1,3 @@
-
 import pytest
 
 from upb_lib.util import parse_flags, parse_url, seconds_to_rate
