@@ -102,8 +102,8 @@ class Link(Element):
             else:
                 set_level = 0
 
-            device.setattr("status", set_level)
             LOG.debug("  Updating '%s' to level %d", device.name, set_level)
+            device.setattr("status", set_level)
 
         self.setattr(
             "last_change",
