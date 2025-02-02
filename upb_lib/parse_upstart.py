@@ -31,6 +31,7 @@ def _process_file(pim, file):
         LOG.error("Malformed UPE file; first line must be a 'Begining of file' record")
         return
     network_id = int(fields[4])
+    pim.network_id = network_id
 
     for line in file:
         fields = line.strip().split(",")

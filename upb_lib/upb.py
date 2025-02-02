@@ -41,6 +41,8 @@ class UpbPim:
         self.encoder = MessageEncode(config.get("tx_count", 1))
         self.devices = UpbDevices(self)
         self.links = Links(self)
+        self.config_ok = True
+        self.network_id = None
 
         self._notifier.attach("connected", self._connected)
         self._notifier.attach("disconnected", self._disconnected)
@@ -49,7 +51,7 @@ class UpbPim:
     async def load_upstart_file(self):
         """Parse and load the UPStart UPE export file"""
         if path := self._config.get("UPStartExportFile"):
-            await asyncio.get_running_loop().run_in_executor(
+            self.config_ok = await asyncio.get_running_loop().run_in_executor(
                 None, process_upstart_file, self, path
             )
             if self.flags.get("tx_count"):
