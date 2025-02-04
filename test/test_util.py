@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 import pytest
 
 from upb_lib.util import parse_flags, parse_url, seconds_to_rate
@@ -26,7 +24,7 @@ def test_parse_url_unknown_scheme():
 
 def test_parse_flags_one_simple_flag():
     flags = parse_flags("foo")
-    assert flags["foo"] == True
+    assert flags["foo"] is True
 
 
 def test_parse_flags_two_simple_flags():

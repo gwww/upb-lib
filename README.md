@@ -6,7 +6,7 @@ https://github.com/gwww/upb-lib
 
 ## Requirements
 
-- Python 3.7 (or higher)
+- Python 3.11 (or higher)
 
 ## Description
 
@@ -92,7 +92,7 @@ The values of the UPB protocol rate values and mapped to the number of seconds i
 
 ## Development
 
-This project uses [poetry](https://poetry.eustace.io/) for development dependencies. Installation instructions are on their website.
+This project uses [uv](https://docs.astral.sh/uv/) for development dependencies. Installation instructions are on their website.
 
 To get started developing:
 

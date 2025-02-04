@@ -30,7 +30,7 @@ class LinkAddr(Addr):
         self._index = f"{self.network_id}_{self.upb_id}"
 
 
-class Link(Element):
+class Link(Element[LinkAddr]):
     """Class representing a UPB Link."""
 
     def __init__(self, addr, pim):
@@ -44,12 +44,12 @@ class Link(Element):
 
     def activate(self):
         """(Helper) Activate link"""
-        self._pim.send(self._pim.encoder.activate_link(self._addr), False)
+        self._pim.send(self._pim.encoder.activate_link(self._addr))
         self.update_device_levels(UpbCommand.ACTIVATE)
 
     def deactivate(self):
         """(Helper) Deactivate link"""
-        self._pim.send(self._pim.encoder.deactivate_link(self._addr), False)
+        self._pim.send(self._pim.encoder.deactivate_link(self._addr))
         self.update_device_levels(UpbCommand.DEACTIVATE)
 
     def goto(self, brightness, rate=-1):
@@ -58,7 +58,7 @@ class Link(Element):
         brightness, rate = check_dim_params(
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
-        self._pim.send(self._pim.encoder.goto(self._addr, brightness, rate), False)
+        self._pim.send(self._pim.encoder.goto(self._addr, brightness, rate))
         self.update_device_levels(UpbCommand.GOTO, brightness, saved_rate)
 
     def fade_start(self, brightness, rate=-1):
@@ -67,14 +67,12 @@ class Link(Element):
         brightness, rate = check_dim_params(
             brightness, rate, self._pim.flags.get("use_raw_rate")
         )
-        self._pim.send(
-            self._pim.encoder.fade_start(self._addr, brightness, rate), False
-        )
+        self._pim.send(self._pim.encoder.fade_start(self._addr, brightness, rate))
         self.update_device_levels(UpbCommand.FADE_START, brightness, saved_rate)
 
     def fade_stop(self):
         """(Helper) Stop fading a link."""
-        self._pim.send(self._pim.encoder.fade_stop(self._addr), False)
+        self._pim.send(self._pim.encoder.fade_stop(self._addr))
         for device_link in self.devices:
             device = self._pim.devices.elements.get(device_link.device_id)
             if device:
@@ -86,10 +84,10 @@ class Link(Element):
             "unlimited_blink_rate"
         ):
             rate = MINIMUM_BLINK_RATE  # Force 1/3 of second blink rate
-        self._pim.send(self._pim.encoder.blink(self._addr, rate), False)
+        self._pim.send(self._pim.encoder.blink(self._addr, rate))
         self.update_device_levels(UpbCommand.BLINK, 100)
 
-    def update_device_levels(self, upb_cmd, level=-1, rate=-1):
+    def update_device_levels(self, upb_cmd: UpbCommand, level=-1, rate=-1):
         """Update the dim level on all devices in this link."""
         LOG.debug("%s %s %s", upb_cmd.name.capitalize(), self.name, self.index)
         for device_link in self.devices:
@@ -104,17 +102,21 @@ class Link(Element):
             else:
                 set_level = 0
 
-            device.setattr("status", set_level)
             LOG.debug("  Updating '%s' to level %d", device.name, set_level)
+            device.setattr("status", set_level)
 
-        changes = {"timestamp": time()}
-        changes["command"] = UPB_COMMAND_TO_ACTION_MAPPING[upb_cmd.name]
-        changes["level"] = level
-        changes["rate"] = rate
-        self.setattr("last_change", changes)
+        self.setattr(
+            "last_change",
+            {
+                "timestamp": time(),
+                "command": UPB_COMMAND_TO_ACTION_MAPPING[upb_cmd.name],
+                "level": level,
+                "rate": rate,
+            },
+        )
 
 
-class Links(Elements):
+class Links(Elements[Link]):
     """Handling for multiple links."""
 
     def __init__(self, pim):

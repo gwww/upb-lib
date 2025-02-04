@@ -10,11 +10,61 @@ from .const import UpbCommand
 
 LOG = logging.getLogger(__name__)
 PIM_ID = 0xFF
+EMPTY_BYTEARRAY = bytearray()
 
 Message = namedtuple(
     "Message",
     "link repeater_req length ack_req tx_count tx_seq network_id dest_id src_id msg_id data",  # noqa: E501
 )
+
+
+def decode(line: str) -> tuple[bytearray, Message]:
+    """
+    Decode and return a UPB message
+
+    ASCII Message format: CCCCNNDDSSMM...KK
+
+    CCCC - control word, includes length
+    NN - Network ID
+    DD - Destination ID
+    SS - Source ID
+    MM - UPB Message type
+    ... - contents of UPB message, vary by type; decoded by msg handler
+    KK - checksum
+    """
+
+    msg = bytearray.fromhex(line)  # strip checksum
+
+    cksum = (256 - reduce(lambda x, y: x + y, msg)) % 256
+    if cksum != 0:
+        raise ValueError("Message has bad checksum")
+
+    if len(msg) < 6:
+        raise ValueError("UPB message less than 12 characters")
+
+    control = int.from_bytes(msg[0:2], byteorder="big")
+    length = (control >> 8) & 31
+    if length != len(msg):
+        raise ValueError(
+            f"UPB message has bad length, got {len(msg)}, expected {length}"
+        )
+
+    msg = Message(
+        link=(control & 0x8000) != 0,
+        repeater_req=(control >> 13) & 3,
+        length=length,
+        ack_req=(control >> 4) & 7,
+        tx_count=(control >> 2) & 3,
+        tx_seq=control & 3,
+        network_id=msg[2],
+        dest_id=msg[3],
+        src_id=msg[4],
+        msg_id=msg[5],
+        data=msg[6:-1],
+    )
+    response_for = bytearray([msg.network_id, msg.src_id])
+
+    return (response_for, msg)
 
 
 class MessageDecode:
@@ -98,7 +148,9 @@ class MessageEncode:
         ctl = ctl | 0
         return ctl
 
-    def _encode_message(self, ctl, addr, src_id, msg_code, data=""):
+    def _encode_message(
+        self, ctl, addr, src_id, msg_code, data: bytearray = EMPTY_BYTEARRAY
+    ):
         """Encode a message for the PIM, assumes data formatted"""
         ctl = self._create_control_word(addr.is_link) if ctl == -1 else ctl
         length = 7 + len(data)
