@@ -25,21 +25,21 @@ SECONDS_TO_RATE = [
 ]
 
 
-def seconds_to_rate(seconds):
+def seconds_to_rate(seconds: float) -> int:
     """Convert seconds to a UPB rate value."""
     return min(
         range(len(SECONDS_TO_RATE)), key=lambda i: abs(SECONDS_TO_RATE[i] - seconds)
     )
 
 
-def rate_to_seconds(rate):
+def rate_to_seconds(rate: int) -> float:
     """Convert a UPB rate value to seconds."""
     if rate < len(SECONDS_TO_RATE):
         return SECONDS_TO_RATE[rate]
     return -1
 
 
-def check_dim_params(brightness, rate, use_raw_rate):
+def check_dim_params(brightness: int, rate: int, use_raw_rate: bool) -> tuple[int, int]:
     """Check that device params are in range."""
     brightness = round(brightness)
     if brightness < 0:
@@ -60,7 +60,7 @@ def check_dim_params(brightness, rate, use_raw_rate):
     return (brightness, rate)
 
 
-def parse_url(url):
+def parse_url(url: str) -> tuple[str, str, int]:
     """Parse a PIM connection string"""
     scheme, dest = url.split("://")
     host = None

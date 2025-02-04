@@ -4,7 +4,7 @@ Base of the UpbDevice and link elements.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from typing import Any, Generic, TypeVar
 
 
@@ -42,7 +42,7 @@ class Addr:
         """Return the address in index form."""
         return self._index
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the address in index form."""
         return str(self._index)
 
@@ -62,12 +62,12 @@ class Element(Generic[U]):
         self.name: str | None = None
 
     @property
-    def index(self):
+    def index(self) -> str:
         """Get the index, immutable once class created"""
         return self._index
 
     @property
-    def addr(self):
+    def addr(self) -> U:
         """Get the address."""
         return self._addr
 
@@ -105,7 +105,7 @@ class Element(Generic[U]):
         if close_the_changeset and self._changeset:
             self._notify()
 
-    def __str__(self):
+    def __str__(self) -> str:
         varlist = {
             k: v
             for (k, v) in vars(self).items()
@@ -115,7 +115,7 @@ class Element(Generic[U]):
         varstr = " ".join("{}:{}".format(*item) for item in varlist)
         return f"{self._index} '{self.name}' {varstr}"
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         """Package up the public attributes as a dict."""
         attrs = vars(self)
         return {key: attrs[key] for key in attrs if not key.startswith("_")}
@@ -131,11 +131,11 @@ class Elements(Generic[T]):
         self.pim = pim
         self.elements: dict[str, T] = {}
 
-    def add_element(self, element: T):
+    def add_element(self, element: T) -> None:
         """Add an element to list of elements."""
         self.elements[element.index] = element
 
-    def connection_status_change(self, _):
+    def connection_status_change(self, _) -> None:
         """Force a callback when the PIM becomes connected/disconnected."""
         for _, element in self.elements.items():
             element._notify()  # pylint: disable=protected-access
@@ -147,5 +147,5 @@ class Elements(Generic[T]):
     def __iter__(self):
         yield from self.elements
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> Element | None:
         return self.elements.get(key)
