@@ -4,7 +4,7 @@ Base of the UpbDevice and link elements.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Generator
+from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
 
