@@ -1,6 +1,6 @@
 [project]
 name = "upb-lib"
-version = "0.5.10"
+version = "0.6.0"
 description = "Library for interacting with UPB PIM."
 readme = "README.md"
 requires-python = ">= 3.11"
@@ -12,6 +12,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "pyserial-asyncio-fast >= 0.11",
@@ -23,10 +24,10 @@ dev-dependencies = [
     "attrs >=24",
     "colorlog >=6.8",
     "mypy >=1.11",
-    "pylint >=3.2",
+    "pylint >=3.3",
     "urwid ==2.1.2",
     "pytest >=8.3",
-    "pytest-asyncio >=0.23",
+    "pytest-asyncio >=0.24",
     "ruff >=0.9.1",
 ]
 
