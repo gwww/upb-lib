@@ -118,7 +118,7 @@ Useful information on the UPB protocol can be found in the following documents:
 
 Using [ser2net](https://linux.die.net/man/8/ser2net) to proxy and examine
 commands sent by [UpStart](https://pcswebstore.com/pages/upb-software) can also
-be insightful.
+be insightful. There is a sample configuration for ser2net in the bin directory.
 
 ## Reporting a Bug
 

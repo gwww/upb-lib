@@ -1,0 +1,14 @@
+%YAML 1.1
+---
+# To test the UPB library over the network on a Linux/Mac system:
+# 0. Install ser2net (I used brew install ser2net)
+# 1. setenv UPBPIM_URL tcp://localhost:2012
+# 2. Change the configuration below to match the serial port device you are using.
+# 3. From the root directory of the library, run: ser2net -n -c bin/ser2net.yaml
+# 4. Make sure you the the UPE export in the bin directory and it's named: upb.upe
+# 4. Run: bin/simple
+#
+connection: &con00
+  accepter: tcp,2012
+  connector: serialdev,/dev/tty.usbserial-FTE2FZBJ,4800n81,local
+  # trace-both: '/var/log/trace-\p'
