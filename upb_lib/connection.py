@@ -83,15 +83,15 @@ class Connection:
             self._notifier.notify("connected", {})
 
     def _is_repeated_message(self, msg: Message) -> bool:
-        saved_msg = msg._replace(tx_seq=0)
-        if not self._last_message:
-            self._last_message = saved_msg
+        if self._last_message is None or msg.tx_seq <= self._last_message.tx_seq:
+            self._last_message = msg
             return False
 
-        if saved_msg == self._last_message:
+        # New msg seq number bigger, check if msgs are the same except sequence numbers
+        if msg._replace(tx_seq=0) == self._last_message._replace(tx_seq=0):
             return True
 
-        self._last_message = saved_msg
+        self._last_message = msg
         return False
 
     async def _handle_pim_command(self, pim_command: str, pim_data: str) -> None:
