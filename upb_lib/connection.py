@@ -9,9 +9,9 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from serialx import open_serial_connection
+from serialx import EIGHTBITS, open_serial_connection, PARITY_NONE, SerialTimeoutException, STOPBITS_ONE
 
-from .const import BAUDRATE, PimCommand, PimResponse
+from .const import BAUDRATE, PimCommand, PimResponse, SERIAL_TIMEOUT_SECONDS
 from .message import Message, decode
 from .notify import Notifier
 from .util import parse_url
@@ -63,13 +63,26 @@ class Connection:
             )
         while not self._writer:
             try:
-                async with asyncio_timeout(30):
-                    reader, self._writer = await open_serial_connection(
-                        url=parsed_url, baudrate=BAUDRATE
-                    )
-            except (TimeoutError, ValueError, OSError) as err:
+                reader, self._writer = await open_serial_connection(
+                    baudrate=BAUDRATE,
+                    bytesize=EIGHTBITS,
+                    parity=PARITY_NONE,
+                    stopbits=STOPBITS_ONE,
+                    timeout=SERIAL_TIMEOUT_SECONDS,
+                    url=parsed_url,
+                )
+            except SerialTimeoutException as err:
                 LOG.warning(
-                    "Error connecting to PIM (%s). Retrying in %d seconds",
+                    "Timeout connecting to PIM (%r). Retrying in %d seconds",
+                    err,
+                    retry_time,
+                )
+                await asyncio.sleep(retry_time)
+                retry_time = min(60, retry_time * 2)
+                continue
+            except Exception as err:
+                LOG.warning(
+                    "Error connecting to PIM (%r). Retrying in %d seconds",
                     err,
                     retry_time,
                 )
@@ -127,7 +140,7 @@ class Connection:
                 if not (data := await reader.read(500)):
                     raise ValueError()
             except (OSError, ValueError) as err:
-                LOG.error("Error connecting to PIM (%s)", err)
+                LOG.error("Error connecting to PIM (%r)", err)
                 self.disconnect("Lost connection to PIM")
                 self._notifier.notify("disconnected", {})
                 await self.connect()
