@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "serialx >= 1.6.0",
+    "serialx >= 1.4.0,<2",
     "pytz >= 2021",
 ]
 
