@@ -9,9 +9,15 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from serialx import EIGHTBITS, open_serial_connection, PARITY_NONE, SerialTimeoutException, STOPBITS_ONE
+from serialx import (
+    EIGHTBITS,
+    PARITY_NONE,
+    STOPBITS_ONE,
+    SerialTimeoutException,
+    open_serial_connection,
+)
 
-from .const import BAUDRATE, PimCommand, PimResponse, SERIAL_TIMEOUT_SECONDS
+from .const import BAUDRATE, SERIAL_TIMEOUT_SECONDS, PimCommand, PimResponse
 from .message import Message, decode
 from .notify import Notifier
 from .util import parse_url
@@ -57,11 +63,13 @@ class Connection:
         parsed_url = parse_url(self._url)
         if parsed_url != self._url:
             LOG.warning(
-                "Parsed URL '%s' from '%s' for backward compatibility. Please update your configuration to use the new URL format.",
+                "Parsed URL '%s' from '%s' for backward compatibility. Please update"
+                " your configuration to use the new URL format.",
                 parsed_url,
                 self._url,
             )
         while not self._writer:
+            errored = False
             try:
                 reader, self._writer = await open_serial_connection(
                     baudrate=BAUDRATE,
@@ -77,15 +85,15 @@ class Connection:
                     err,
                     retry_time,
                 )
-                await asyncio.sleep(retry_time)
-                retry_time = min(60, retry_time * 2)
-                continue
-            except Exception as err:
+                errored = True
+            except Exception as err:  # pylint: disable=broad-except
                 LOG.warning(
                     "Error connecting to PIM (%r). Retrying in %d seconds",
                     err,
                     retry_time,
                 )
+                errored = True
+            if errored:
                 await asyncio.sleep(retry_time)
                 retry_time = min(60, retry_time * 2)
                 continue

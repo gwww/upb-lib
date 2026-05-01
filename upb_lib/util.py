@@ -66,22 +66,21 @@ def check_dim_params(brightness: int, rate: int, use_raw_rate: bool) -> tuple[in
 def parse_url(url: str) -> str:
     """Parse a PIM connection string for backward compatibility."""
     if url.startswith("tcp://"):
-        # Backward compatibility for using tcp://host (without port) where default port is TCP_DEFAULT_PORT
+        # Backward compatibility for tcp://host (without port) where default port
+        # is TCP_DEFAULT_PORT.
         # New installations should use socket://host:port
         parts = urlsplit(url)
         if parts.netloc and ":" not in parts.netloc:
             parts = parts._replace(netloc=f"{parts.netloc}:{TCP_DEFAULT_PORT}")
             return urlunsplit(parts)
-        else:
-            return url
-    elif url.startswith("serial://"):
+        return url
+    if url.startswith("serial://"):
         # Backwards compatibility for serial:// and baudrate at end of URL
         # New installations should use device:// and no longer include baudrate in URL
         new_url = url.replace("serial://", "device://", 1)
         new_url = re.sub(r":([0-9]+)$", r"", new_url)
         return new_url
-    else:
-        return url
+    return url
 
 
 def parse_flags(flags_in: str) -> dict[str, Any]:
