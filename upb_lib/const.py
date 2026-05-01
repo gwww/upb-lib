@@ -4,6 +4,10 @@ Constants used across package
 
 from enum import Enum
 
+BAUDRATE = 4800
+
+TCP_DEFAULT_PORT = 2101
+
 MINIMUM_BLINK_RATE = 20
 
 

@@ -9,9 +9,9 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from serial_asyncio_fast import open_serial_connection
+from serialx import open_serial_connection
 
-from .const import PimCommand, PimResponse
+from .const import BAUDRATE, PimCommand, PimResponse
 from .message import Message, decode
 from .notify import Notifier
 from .util import parse_url
@@ -54,18 +54,19 @@ class Connection:
 
         LOG.info("Connecting to PIM at %s", self._url)
         retry_time = 1
-        scheme, dest, param = parse_url(self._url)
+        parsed_url = parse_url(self._url)
+        if parsed_url != self._url:
+            LOG.warning(
+                "Parsed URL '%s' from '%s' for backward compatibility. Please update your configuration to use the new URL format.",
+                parsed_url,
+                self._url,
+            )
         while not self._writer:
             try:
                 async with asyncio_timeout(30):
-                    if scheme == "serial":
-                        reader, self._writer = await open_serial_connection(
-                            url=dest, baudrate=param
-                        )
-                    else:
-                        reader, self._writer = await asyncio.open_connection(
-                            host=dest, port=param
-                        )
+                    reader, self._writer = await open_serial_connection(
+                        url=parsed_url, baudrate=BAUDRATE
+                    )
             except (TimeoutError, ValueError, OSError) as err:
                 LOG.warning(
                     "Error connecting to PIM (%s). Retrying in %d seconds",
@@ -76,7 +77,6 @@ class Connection:
                 retry_time = min(60, retry_time * 2)
                 continue
 
-            # if scheme != "serial":
             self._tasks.add(asyncio.create_task(self._heartbeat_timer()))
             self._tasks.add(asyncio.create_task(self._read_stream(reader)))
             self._tasks.add(asyncio.create_task(self._write_stream()))

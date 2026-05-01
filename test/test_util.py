@@ -3,23 +3,29 @@ import pytest
 from upb_lib.util import parse_flags, parse_url, seconds_to_rate
 
 
-def test_parse_url_valid_tcp():
-    (scheme, host, port) = parse_url("tcp://some.host:1234")
-    assert scheme == "tcp"
-    assert host == "some.host"
-    assert port == 1234
+def test_parse_url_valid_tcp_backward_compatible():
+    url = parse_url("tcp://some.host")
+    assert url == "tcp://some.host:2101"
 
 
-def test_parse_url_valid_serial():
-    (scheme, host, port) = parse_url("serial:///dev/tty:4800")
-    assert scheme == "serial"
-    assert host == "/dev/tty"
-    assert port == 4800
+def test_parse_url_valid_tcp_ignore_if_port():
+    url = parse_url("tcp://some.host:1234")
+    assert url == "tcp://some.host:1234"
 
 
-def test_parse_url_unknown_scheme():
-    with pytest.raises(ValueError):
-        parse_url("bad_scheme://rest")
+def test_parse_url_valid_serial_backward_compatible():
+    url = parse_url("serial:///dev/tty")
+    assert url == "device:///dev/tty"
+
+
+def test_parse_url_valid_serial_backward_compatible_with_baud():
+    url = parse_url("serial:///dev/tty:4800")
+    assert url == "device:///dev/tty"
+
+
+def test_parse_url_pass_others():
+    url = parse_url("unknown://something/or/other")
+    assert url == "unknown://something/or/other"
 
 
 def test_parse_flags_one_simple_flag():

@@ -3,6 +3,9 @@
 import contextlib
 import re
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
+
+from .const import TCP_DEFAULT_PORT
 
 # Array for converting seconds to a rate (aka transition) length
 SECONDS_TO_RATE = [
@@ -60,17 +63,25 @@ def check_dim_params(brightness: int, rate: int, use_raw_rate: bool) -> tuple[in
     return (brightness, rate)
 
 
-def parse_url(url: str) -> tuple[str, str, int]:
-    """Parse a PIM connection string"""
-    scheme, dest = url.split("://")
-    host = None
-    if scheme == "tcp":
-        host, port = dest.split(":") if ":" in dest else (dest, 2101)
-    elif scheme == "serial":
-        host, port = dest.split(":") if ":" in dest else (dest, 4800)
+def parse_url(url: str) -> str:
+    """Parse a PIM connection string for backward compatibility."""
+    if url.startswith("tcp://"):
+        # Backward compatibility for using tcp://host (without port) where default port is TCP_DEFAULT_PORT
+        # New installations should use socket://host:port
+        parts = urlsplit(url)
+        if parts.netloc and ":" not in parts.netloc:
+            parts = parts._replace(netloc=f"{parts.netloc}:{TCP_DEFAULT_PORT}")
+            return urlunsplit(parts)
+        else:
+            return url
+    elif url.startswith("serial://"):
+        # Backwards compatibility for serial:// and baudrate at end of URL
+        # New installations should use device:// and no longer include baudrate in URL
+        new_url = url.replace("serial://", "device://", 1)
+        new_url = re.sub(r":([0-9]+)$", r"", new_url)
+        return new_url
     else:
-        raise ValueError(f"Invalid scheme '{scheme}'")
-    return (scheme, host, int(port))
+        return url
 
 
 def parse_flags(flags_in: str) -> dict[str, Any]:

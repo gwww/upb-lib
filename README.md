@@ -24,7 +24,7 @@ serial port.
 
 ## Overview
 
-Simplest thing right now is when in the root of the git repo that you have cloned is to enter the command `bin/simple`. This program requires that the environment variable `UPBPIM_URL` set to indicate how to connect to the PIM. For example, `serial:///dev/cu.KeySerial1` connects to the PIM on a serial port (`serial://`) `/dev/cu/KeySerial1`. On Windows something like `serial://COM1` might work.
+Simplest thing right now is when in the root of the git repo that you have cloned is to enter the command `bin/simple`. This program requires that the environment variable `UPBPIM_URL` set to indicate how to connect to the PIM. For example, `device:///dev/cu.KeySerial1` connects to the PIM on a serial port (`device://`) `/dev/cu/KeySerial1`. On Windows something like `device://COM1` might work.
 
 Also required is a `UPStart` export file. The `bin/simple` program looks for it
 in the same directory as where the program is (i.e.: `bin`) and assumes that it is named `upb.upe`.
@@ -33,10 +33,19 @@ in the same directory as where the program is (i.e.: `bin`) and assumes that it 
 
 Initialization of the library takes the following parameters:
 
-`url`: This is the PIM to connect to. It is formatted as a URL. Two formats
-are supported: `serial://<device>` where `<device>` is the serial/USB port on which the PIM is connected; `tcp://<IP or domain>[:<port]` where IP or domain is where the device is connected on the network (perhaps using [ser2tcp](https://github.com/gwww/ser2tcp) or a PIM-U) and an optional `port` number with a default of 2101.
+`url`: This is the PIM to connect to. It is formatted as a URL. The library will connect to the PIM at 4800 baud. All [`serialx`](https://pypi.org/project/serialx/) formats are supported (this list may not be up-to-date):
 
-`UPStartExportFile`: the path of where to read the export file generated through File->Export on the UpStart utility. This is optional but recommended.
+- `<device>` or `device://<device>` where `<device>` is the serial/USB port on which the PIM is connected
+- `socket://<IP or domain>:<port>` where IP or domain is where the device is connected on the network (perhaps using [ser2tcp](https://github.com/gwww/ser2tcp) or a PIM-U) and a `port` number
+- `rfc2217://<IP or domain>:<port>` where IP or domain is where the device is connected on the network
+- `esphome://<IP or domain>:<port>/?port_name=<port name>&key=<key>` where IP or domain is where the ESPHome device is connected on the network (requires `pip install 'serialx[esphome]'`)
+- `pyodide://<device>` where device is a device provided by a browser's Web Serial API
+
+NOTE: For backward compatibility with previous versions of this library:
+- `serial://` is the same as `device://`
+- `tcp://<IP or domain>` (`tcp://` without a port specified) is the same as `socket://<IP or domain>:2101`
+
+`UPStartExportFile`: the path of where to read the export file generated through File->Export on the UpStart utility. This is optional but recommended
 
 `tx_count`: (optional) The number of times every UPB message is transmitted (CNT portion of the control word). Defaults to 1. Setting the value to 2 may be required for networks that use a repeater.
 
