@@ -4,7 +4,13 @@ Constants used across package
 
 from enum import Enum
 
+BAUDRATE = 4800
+
 MINIMUM_BLINK_RATE = 20
+
+SERIAL_TIMEOUT_SECONDS = 30
+
+TCP_DEFAULT_PORT = 2101
 
 
 class UpbCommand(Enum):

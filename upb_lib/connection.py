@@ -9,9 +9,15 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
-from serial_asyncio_fast import open_serial_connection
+from serialx import (
+    EIGHTBITS,
+    PARITY_NONE,
+    STOPBITS_ONE,
+    SerialTimeoutException,
+    open_serial_connection,
+)
 
-from .const import PimCommand, PimResponse
+from .const import BAUDRATE, SERIAL_TIMEOUT_SECONDS, PimCommand, PimResponse
 from .message import Message, decode
 from .notify import Notifier
 from .util import parse_url
@@ -54,29 +60,44 @@ class Connection:
 
         LOG.info("Connecting to PIM at %s", self._url)
         retry_time = 1
-        scheme, dest, param = parse_url(self._url)
+        parsed_url = parse_url(self._url)
+        if parsed_url != self._url:
+            LOG.warning(
+                "Parsed URL '%s' from '%s' for backward compatibility. Please update"
+                " your configuration to use the new URL format.",
+                parsed_url,
+                self._url,
+            )
         while not self._writer:
+            errored = False
             try:
-                async with asyncio_timeout(30):
-                    if scheme == "serial":
-                        reader, self._writer = await open_serial_connection(
-                            url=dest, baudrate=param
-                        )
-                    else:
-                        reader, self._writer = await asyncio.open_connection(
-                            host=dest, port=param
-                        )
-            except (TimeoutError, ValueError, OSError) as err:
+                reader, self._writer = await open_serial_connection(
+                    baudrate=BAUDRATE,
+                    bytesize=EIGHTBITS,
+                    parity=PARITY_NONE,
+                    stopbits=STOPBITS_ONE,
+                    timeout=SERIAL_TIMEOUT_SECONDS,
+                    url=parsed_url,
+                )
+            except SerialTimeoutException as err:
                 LOG.warning(
-                    "Error connecting to PIM (%s). Retrying in %d seconds",
+                    "Timeout connecting to PIM (%r). Retrying in %d seconds",
                     err,
                     retry_time,
                 )
+                errored = True
+            except Exception as err:  # pylint: disable=broad-except
+                LOG.warning(
+                    "Error connecting to PIM (%r). Retrying in %d seconds",
+                    err,
+                    retry_time,
+                )
+                errored = True
+            if errored:
                 await asyncio.sleep(retry_time)
                 retry_time = min(60, retry_time * 2)
                 continue
 
-            # if scheme != "serial":
             self._tasks.add(asyncio.create_task(self._heartbeat_timer()))
             self._tasks.add(asyncio.create_task(self._read_stream(reader)))
             self._tasks.add(asyncio.create_task(self._write_stream()))
@@ -127,7 +148,7 @@ class Connection:
                 if not (data := await reader.read(500)):
                     raise ValueError()
             except (OSError, ValueError) as err:
-                LOG.error("Error connecting to PIM (%s)", err)
+                LOG.error("Error connecting to PIM (%r)", err)
                 self.disconnect("Lost connection to PIM")
                 self._notifier.notify("disconnected", {})
                 await self.connect()
