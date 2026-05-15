@@ -59,6 +59,21 @@ class UpeFileRecord(Enum):
     META_RENAME_DEVICE = "99"
 
 
+# Position in list matches spec; do not reorder list
+DEVICE_KINDS = [
+    "Other",
+    "Keypad",
+    "Switch",
+    "Module",
+    "Input Module",
+    "Input-Output Module",
+    "VPM",
+    "VHC",
+    "Thermostat",
+    "XPW",
+    "RFI",
+]
+
 MANUFACTURERS = {
     "1": "PCS Lighting",
     "2": "MD Manufacturing",

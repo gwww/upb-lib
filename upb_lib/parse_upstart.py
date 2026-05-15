@@ -4,7 +4,7 @@ Parse UPStart file and create UPB device/link objects
 
 import logging
 
-from .const import MANUFACTURERS, PRODUCTS, UpeFileRecord
+from .const import DEVICE_KINDS, MANUFACTURERS, PRODUCTS, UpeFileRecord
 from .devices import UpbAddr, UpbDevice
 from .links import DeviceLink, Link, LinkAddr
 from .util import parse_flags
@@ -70,13 +70,9 @@ def _device_definition_record(pim, network_id: int, fields: list[str]):
 
         device.manufacturer = MANUFACTURERS.get(fields[3], fields[3])
         product = f"{fields[3]}/{fields[4]}"
-        if product in PRODUCTS:
-            device.product = PRODUCTS[product][0]
-            device.kind = PRODUCTS[product][1]
-        else:
-            device.product = product
-            device.kind = fields[7]
-
+        kind = int(fields[7])
+        device.kind = DEVICE_KINDS[kind] if 0 <= kind < len(DEVICE_KINDS) else fields[7]
+        device.product = PRODUCTS[product][0] if product in PRODUCTS else product
         pim.devices.add_element(device)
 
 
