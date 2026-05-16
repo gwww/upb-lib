@@ -134,13 +134,20 @@ class UpbDevices(Elements[UpbDevice]):
         # Since I cannot test with real devices, this code is written so that there is
         # minimal impact to existing functionality (and continues to work)
         if (device := self._get_device_from_msg(msg, 0)) and device.isKeypad():
-            device.setattr("status", msg.data[1])
-            LOG.debug(
-                "Device status report: %s '%s' level %d",
-                device.kind,
-                device.name,
-                device.status,
-            )
+            if len(msg.data) == 2:
+                device.setattr("status", msg.data[1])
+                LOG.debug(
+                    "Device status report: %s '%s' level %d",
+                    device.kind,
+                    device.name,
+                    device.status,
+                )
+            else:
+                LOG.warning(
+                    "keypad DSR missing data (length=%d): %s",
+                    len(msg.data),
+                    device.name,
+                )
             return
 
         status_length = len(msg.data)
